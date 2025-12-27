@@ -1,4 +1,5 @@
 using OpenCvSharp;
+using System.Windows.Media.Imaging;
 
 namespace AutoPlot.Utils
 {
@@ -11,5 +12,19 @@ namespace AutoPlot.Utils
                 throw new System.IO.FileNotFoundException($"画像が開けへん: {path}");
             return img;
         }
+         
+        public static BitmapImage LoadBitmap(string path)
+        {
+            BitmapImage bmp = new BitmapImage();
+            bmp.BeginInit();
+            bmp.UriSource = new Uri(path, UriKind.Absolute);
+            bmp.CacheOption = BitmapCacheOption.OnLoad;
+            bmp.EndInit();
+            bmp.Freeze();
+            return bmp;
+        }
+    
     }
+    
+    
 }
