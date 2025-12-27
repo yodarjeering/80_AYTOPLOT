@@ -1,8 +1,14 @@
 {
   "version": 2,
-  "dgSpecHash": "a+abfF4Wwrs=",
+  "dgSpecHash": "g9lGRHyxIMo=",
   "success": true,
   "projectFilePath": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\AutoPlot.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\Owner\\.nuget\\packages\\communitytoolkit.mvvm\\8.4.0\\communitytoolkit.mvvm.8.4.0.nupkg.sha512",
+    "C:\\Users\\Owner\\.nuget\\packages\\mathnet.numerics\\5.0.0\\mathnet.numerics.5.0.0.nupkg.sha512",
+    "C:\\Users\\Owner\\.nuget\\packages\\opencvsharp4\\4.11.0.20250507\\opencvsharp4.4.11.0.20250507.nupkg.sha512",
+    "C:\\Users\\Owner\\.nuget\\packages\\opencvsharp4.runtime.win\\4.11.0.20250507\\opencvsharp4.runtime.win.4.11.0.20250507.nupkg.sha512",
+    "C:\\Users\\Owner\\.nuget\\packages\\system.memory\\4.6.3\\system.memory.4.6.3.nupkg.sha512"
+  ],
   "logs": []
 }

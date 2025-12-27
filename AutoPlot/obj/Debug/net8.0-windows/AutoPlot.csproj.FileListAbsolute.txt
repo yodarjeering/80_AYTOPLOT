@@ -1,0 +1,8 @@
+C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\AutoPlot.csproj.AssemblyReference.cache
+C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\MainWindow.g.cs
+C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\App.g.cs
+C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\AutoPlot_MarkupCompile.cache
+C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\AutoPlot_MarkupCompile.lref
+C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\Views\MainView.g.cs
+C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\GeneratedInternalTypeHelper.g.cs
+C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\old\MainWindow.g.cs
