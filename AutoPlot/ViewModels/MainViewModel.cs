@@ -5,6 +5,8 @@ using CommunityToolkit.Mvvm.Input;
 using System.Linq;
 using System.Windows.Media.Imaging;
 using AutoPlot.Utils;
+using System.Windows;
+
 
 namespace AutoPlot.ViewModels
 {
@@ -67,6 +69,8 @@ namespace AutoPlot.ViewModels
             get => _inputBitmap;
             set => SetProperty(ref _inputBitmap, value);
         }
+ 
+
     }
 
 
