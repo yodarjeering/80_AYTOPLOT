@@ -29,11 +29,15 @@
         <!-- 上部: パス入力 & ボタン -->
         <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,10">
             <TextBox x:Name="ImagePathTextBox"
-                     Text="{Binding ImagePath}"
-                     Width="500"
-                     VerticalAlignment="Center"
-                     Margin="0,0,10,0"
-                     />
+                Text="{Binding ImagePath}"
+                Width="500"
+                VerticalAlignment="Center"
+                Margin="0,0,10,0"
+                AllowDrop="True"
+                PreviewDragOver="ImagePathTextBox_PreviewDragOver"
+                Drop="ImagePathTextBox_Drop"
+            />
+
             <Button Content="パス決定" Command="{Binding LoadImageCommand}" Width="100" />
         </StackPanel>
 

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AutoPlot")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0b349bbfe2382949c7094cf74a864ca2f5191e80")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9a1ce2bca42b3232b382babfb5fe57e7296307d4")]
 [assembly: System.Reflection.AssemblyProductAttribute("AutoPlot")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AutoPlot")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
