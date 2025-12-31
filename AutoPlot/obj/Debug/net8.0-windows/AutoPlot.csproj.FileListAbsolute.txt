@@ -3,7 +3,6 @@ C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-
 C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\AutoPlot_MarkupCompile.cache
 C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\AutoPlot_MarkupCompile.lref
 C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\Views\MainView.g.cs
-C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\GeneratedInternalTypeHelper.g.cs
 C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\old\MainWindow.g.cs
 C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\bin\Debug\net8.0-windows\AutoPlot.exe
 C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\bin\Debug\net8.0-windows\AutoPlot.deps.json
@@ -36,3 +35,8 @@ C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\bin\Debug\net8.0-
 C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\bin\Debug\net8.0-windows\Microsoft.Xaml.Behaviors.dll
 C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\AutoPlot_Content.g.cs
 C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\App.baml
+C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\Views\ImagePathDialog.baml
+C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\Views\ImagePathDialog.g.cs
+C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\GeneratedInternalTypeHelper.g.cs
+C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\bin\Debug\net8.0-windows\OpenCvSharp.WpfExtensions.dll
+C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\bin\Debug\net8.0-windows\System.Drawing.Common.dll

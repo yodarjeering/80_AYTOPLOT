@@ -70,6 +70,10 @@
               "target": "Package",
               "version": "[4.11.0.20250507, )"
             },
+            "OpenCvSharp4.WpfExtensions": {
+              "target": "Package",
+              "version": "[4.11.0.20250507, )"
+            },
             "OpenCvSharp4.runtime.win": {
               "target": "Package",
               "version": "[4.11.0.20250507, )"

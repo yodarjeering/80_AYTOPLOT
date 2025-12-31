@@ -31,11 +31,13 @@
                         Style="{StaticResource MainMenuButtonStyle}"
                         Click="OnShowPathInputDialog" />
 
-                <Button Content="線描画"
-                        Style="{StaticResource MainMenuButtonStyle}" />
-
-                <Button Content="クリア"
-                        Style="{StaticResource MainMenuButtonStyle}" />
+                <Button Content="軸キャリブレーション"
+                        Style="{StaticResource MainMenuButtonStyle}" 
+                        Command="{Binding AxisCalibrationCommand}" />
+                        
+                <Button Content="原図表示"
+                        Style="{StaticResource MainMenuButtonStyle}" 
+                        Command="{Binding ShowOriginalImageCommand}" />
 
                 <Button Content="保存"
                         Style="{StaticResource MainMenuButtonStyle}" />
