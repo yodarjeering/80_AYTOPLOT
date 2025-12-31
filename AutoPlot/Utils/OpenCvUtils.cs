@@ -1,4 +1,5 @@
 using OpenCvSharp;
+using OpenCvSharp.WpfExtensions;
 using System.Windows.Media.Imaging;
 
 namespace AutoPlot.Utils
@@ -23,7 +24,12 @@ namespace AutoPlot.Utils
             bmp.Freeze();
             return bmp;
         }
-    
+
+        public static Mat BitmapImageToMat(BitmapSource bitmap)
+        {
+            return BitmapSourceConverter.ToMat(bitmap);
+        }
+
     }
     
     
