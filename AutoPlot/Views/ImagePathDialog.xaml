@@ -7,7 +7,9 @@
     Width="500"
     AllowDrop="True"
     DragOver="Dialog_DragOver"
-    Drop="Dialog_Drop">
+    Drop="Dialog_Drop"
+    WindowStartupLocation="CenterScreen">
+     
 
 
     <StackPanel Margin="15" Width="450">
