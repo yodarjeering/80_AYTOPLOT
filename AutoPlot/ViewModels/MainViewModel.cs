@@ -1,14 +1,16 @@
 using AutoPlot.Models;
 using AutoPlot.Services;
+using AutoPlot.Utils;
+using AutoPlot.Views;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Linq;
 using System.Windows.Media.Imaging;
-using AutoPlot.Utils;
 using System.Windows;
+using System.Windows.Input;
 using OpenCvSharp;
 using OpenCvSharp.WpfExtensions;
-using System.Windows.Input;
+
 
 
 namespace AutoPlot.ViewModels
@@ -37,7 +39,15 @@ namespace AutoPlot.ViewModels
 
         private DisplayState _displayState = DisplayState.None;
 
-
+        private AxisSettings _axisSettings = new AxisSettings
+        {
+            XMin = 0,
+            XMax = 10,
+            IsXLog = false,
+            YMin = 0,
+            YMax = 10,
+            IsYLog = false
+        };
 
 
         public BitmapSource InputBitmap
@@ -103,10 +113,66 @@ namespace AutoPlot.ViewModels
                 _service.CreateRoiHighlightImage(src, _roi);
 
             InputBitmap = MatToBitmapSource(highlighted);
-            _displayState = DisplayState.AxisCalibrated;
             ResultText   = "軸キャリブレーション表示中";
 
+            var vm = new AxisCalibrationDialogViewModel
+            {
+                XMin  = _axisSettings.XMin,
+                XMax  = _axisSettings.XMax,
+                IsXLog = _axisSettings.IsXLog,
+                YMin  = _axisSettings.YMin,
+                YMax  = _axisSettings.YMax,
+                IsYLog = _axisSettings.IsYLog
+            };
+
+
+            var dialog = new AxisCalibrationDialog
+            {
+                DataContext = vm,
+                Owner = Application.Current.MainWindow,
+                WindowStartupLocation = WindowStartupLocation.Manual
+            };
+
+            // 親Windowの右側に配置
+            dialog.Left = dialog.Owner.Left + 0.6*dialog.Owner.Width; //
+            dialog.Top  = dialog.Owner.Top + 50; // 上から少し下げる
+
+            bool? result = dialog.ShowDialog();
+            if (result != true)
+                return;
+
+            // ★ ここで値を確定
+            ApplyAxisCalibration(vm);
+
         }
+
+        private void ApplyAxisCalibration(AxisCalibrationDialogViewModel vm)
+        {
+            // 値の保持（再計算用）
+            _axisSettings.XMin  = vm.XMin;
+            _axisSettings.XMax  = vm.XMax;
+            _axisSettings.IsXLog = vm.IsXLog;
+
+            _axisSettings.YMin  = vm.YMin;
+            _axisSettings.YMax  = vm.YMax;
+            _axisSettings.IsYLog = vm.IsYLog;
+
+
+            // 再処理
+            var data = _service.Run(
+                ImagePath,
+                _axisSettings.XMin, _axisSettings.XMax,
+                _axisSettings.YMin, _axisSettings.YMax,
+                _axisSettings.IsXLog ? "log" : "linear",
+                _axisSettings.IsYLog ? "log" : "linear"
+            );
+
+            CurveData = data;
+            _roi = data.PlotRoi;
+
+            _displayState = DisplayState.AxisCalibrated;
+        }
+
 
         private BitmapSource MatToBitmapSource(Mat mat)
         {
