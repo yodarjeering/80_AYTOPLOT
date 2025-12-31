@@ -36,6 +36,24 @@ namespace AutoPlot.ImageProcessing
             Mat verticalLines = new();
             Cv2.MorphologyEx(bw, verticalLines, MorphTypes.Open, vKernel);
 
+            // Mat → LineSegmentPoint
+            List<LineSegmentPoint> horizontalSegments =
+                ExtractLineSegments(horizontalLines, isHorizontal: true);
+
+            List<LineSegmentPoint> verticalSegments =
+                ExtractLineSegments(verticalLines, isHorizontal: false);
+
+
+            Rect roi = CalculatePlotRoi(verticalSegments, horizontalSegments);
+
+            // 元画像からROIだけ切り出す
+            Mat plotArea = new Mat(bw, roi);
+
+            
+            // 以降は plotArea だけで処理
+            // ProcessPlot(plotArea);
+
+
             Mat grid = new();
             Cv2.BitwiseOr(horizontalLines, verticalLines, grid);
 
@@ -46,8 +64,7 @@ namespace AutoPlot.ImageProcessing
             Mat labels = new();
             Mat stats = new();
             Mat centroids = new();
-            // int numLabels = Cv2.ConnectedComponentsWithStats(bwNoGrid,
-            //                        labels, stats, centroids, Connectivity.EightConnected);
+
             int numLabels = Cv2.ConnectedComponentsWithStats(
                 bwNoGrid,
                 labels,
@@ -61,11 +78,9 @@ namespace AutoPlot.ImageProcessing
 
             for (int i = 1; i < numLabels; i++)
             {
-                // int area = stats.Get<int>(i, (int)ConnectedComponentsTypes.CC_STAT_AREA);
                 int area = stats.Get<int>(i, (int)ConnectedComponentsTypes.Area);
                 if (area >= minArea)
                 {
-                    // Cv2.Compare(labels, i, clean, CmpType.Equal);
                     Cv2.Compare(labels, i, clean,CmpType.EQ);
                 }
             }
@@ -124,7 +139,109 @@ namespace AutoPlot.ImageProcessing
                 };
             }
 
-            return data;
+            return new CurveData
+            {
+                Points = points,
+                PlotRoi = roi   // ★ ここが肝
+            };
         }
+
+        Rect CalculatePlotRoi(
+            List<LineSegmentPoint> verticalLines,
+            List<LineSegmentPoint> horizontalLines)
+        {
+            if (verticalLines.Count < 2 || horizontalLines.Count < 2)
+                throw new InvalidOperationException("ROI算出に十分な線が検出されていない");
+
+            int xMin = verticalLines.Min(l => Math.Min(l.P1.X, l.P2.X));
+            int xMax = verticalLines.Max(l => Math.Max(l.P1.X, l.P2.X));
+
+
+            int yMin = horizontalLines.Min(l => Math.Min(l.P1.Y, l.P2.Y));
+            int yMax = horizontalLines.Max(l => Math.Max(l.P1.Y, l.P2.Y));
+
+
+            return new Rect(
+                xMin,
+                yMin,
+                xMax - xMin,
+                yMax - yMin
+            );
+        }
+
+        List<LineSegmentPoint> ExtractLineSegments(
+            Mat lineImage,
+            bool isHorizontal)
+        {
+            Cv2.FindContours(
+                lineImage,
+                out Point[][] contours,
+                out _,
+                RetrievalModes.External,
+                ContourApproximationModes.ApproxSimple
+            );
+
+            var segments = new List<LineSegmentPoint>();
+
+            foreach (var c in contours)
+            {
+                Rect r = Cv2.BoundingRect(c);
+
+                // 方向判定
+                if (isHorizontal && r.Width <= r.Height * 5)
+                    continue;
+                if (!isHorizontal && r.Height <= r.Width * 5)
+                    continue;
+
+                LineSegmentPoint seg;
+
+                if (isHorizontal)
+                {
+                    int y = r.Top + r.Height / 2;
+                    seg = new LineSegmentPoint(
+                        new Point(r.Left,  y),
+                        new Point(r.Right, y)
+                    );
+                }
+                else
+                {
+                    int x = r.Left + r.Width / 2;
+                    seg = new LineSegmentPoint(
+                        new Point(x, r.Top),
+                        new Point(x, r.Bottom)
+                    );
+                }
+
+                segments.Add(seg);
+            }
+
+            return segments;
+        }
+
+        // ROI領域をハイライトする画像を作成する関数
+        Mat CreateRoiHighlightImage(Mat src, Rect roi)
+        {
+            // ① 元画像をカラー化（グレー用）
+            Mat gray = new();
+            Cv2.CvtColor(src, gray, ColorConversionCodes.GRAY2BGR);
+
+            // ② 全体を暗く（グレー化）
+            Mat dimmed = new();
+            gray.ConvertTo(dimmed, -1, 0.5, 0); // 明るさ50%
+
+            // ③ ROI部分だけ元画像をコピー
+            src[roi].CopyTo(dimmed[roi]);
+
+            // ROIに枠線を追加
+            Cv2.Rectangle(
+            dimmed,
+            roi,
+            new Scalar(0, 255, 0), // 緑
+            2
+            );
+
+            return dimmed;
+        }
+
     }
 }
