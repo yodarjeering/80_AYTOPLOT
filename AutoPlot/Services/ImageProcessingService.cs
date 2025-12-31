@@ -1,5 +1,6 @@
 using AutoPlot.ImageProcessing;
 using AutoPlot.Models;
+using OpenCvSharp;
 
 namespace AutoPlot.Services
 {
@@ -13,6 +14,39 @@ namespace AutoPlot.Services
                              string xScale, string yScale)
         {
             return _processor.Process(path, xMin, xMax, yMin, yMax, xScale, yScale);
+        }
+
+        
+        public Mat CreateRoiHighlightImage(Mat src, Rect roi)
+        {
+            Mat baseImage = new();
+
+            if (src.Channels() == 1)
+            {
+                Cv2.CvtColor(src, baseImage, ColorConversionCodes.GRAY2BGR);
+            }
+            else
+            {
+                baseImage = src.Clone(); // 3ch / 4ch はそのまま使う
+            }
+
+
+            // 全体を暗くする
+            Mat dimmed = new();
+            baseImage.ConvertTo(dimmed, -1, 0.5, 0);
+
+            // ROI部分だけ元画像をコピー
+            src[roi].CopyTo(dimmed[roi]);
+
+            // ROI枠を描画（分かりやすく）
+            Cv2.Rectangle(
+                dimmed,
+                roi,
+                new Scalar(0, 255, 0),
+                2
+            );
+
+            return dimmed;
         }
     }
 }
