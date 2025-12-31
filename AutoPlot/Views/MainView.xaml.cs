@@ -51,36 +51,57 @@ namespace AutoPlot.Views
         }
 
         private void DrawCanvas_MouseDown(object sender, MouseButtonEventArgs e)
-    {
-        if (e.LeftButton != MouseButtonState.Pressed) return;
-
-        // 描画開始
-        isDrawing = true;
-
-        currentLine = new Polyline
         {
-            Stroke = Brushes.Red,      // 線の色
-            StrokeThickness = 2        // 太さ
-        };
+            if (e.LeftButton != MouseButtonState.Pressed) return;
 
-        DrawCanvas.Children.Add(currentLine);
+            // 描画開始
+            isDrawing = true;
 
-        var pos = e.GetPosition(DrawCanvas);
-        currentLine.Points.Add(pos);
-    }
+            currentLine = new Polyline
+            {
+                Stroke = Brushes.Red,      // 線の色
+                StrokeThickness = 2        // 太さ
+            };
 
-    private void DrawCanvas_MouseMove(object sender, MouseEventArgs e)
-    {
-        if (!isDrawing) return;
+            DrawCanvas.Children.Add(currentLine);
 
-        var pos = e.GetPosition(DrawCanvas);
-        currentLine.Points.Add(pos);
-    }
+            var pos = e.GetPosition(DrawCanvas);
+            currentLine.Points.Add(pos);
+        }
 
-    private void DrawCanvas_MouseUp(object sender, MouseButtonEventArgs e)
-    {
-        isDrawing = false;
-    }
+        private void DrawCanvas_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!isDrawing) return;
+
+            var pos = e.GetPosition(DrawCanvas);
+            currentLine.Points.Add(pos);
+        }
+
+        private void DrawCanvas_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            isDrawing = false;
+        }
+
+        private void OnShowPathInputDialog(object sender, RoutedEventArgs e)
+        {
+            var dialog = new ImagePathDialog
+            {
+                Owner = this
+            };
+
+            bool? result = dialog.ShowDialog();
+            if (result == true)
+            {
+                string selectedPath = dialog.ImagePath;
+                if (DataContext is MainViewModel vm) 
+                {   
+                    vm.ImagePath = selectedPath;
+                    vm.LoadImageCommand?.Execute(null);
+                }
+            }
+
+        }
+
 
     }
 }
