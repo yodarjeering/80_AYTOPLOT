@@ -4,83 +4,85 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:vm="clr-namespace:AutoPlot.ViewModels"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:vm="clr-namespace:AutoPlot.ViewModels"
     mc:Ignorable="d"
-    Title="AutoPlot 画像読み取り"
-    Height="600" Width="900">
+    Title="AutoPlot"
+    Height="500" Width="1000">
 
     <Window.DataContext>
         <vm:MainViewModel />
     </Window.DataContext>
 
-    <Grid Margin="10">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <Grid>
 
-        <!-- 上部: パス入力 & ボタン -->
-        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="180"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
-            <!-- ここは確実にあるスタイルに変更 -->
-            <TextBox
-                x:Name="ImagePathTextBox"
-                Text="{Binding ImagePath}"
-                Width="500"
-                VerticalAlignment="Center"
-                Margin="0,0,10,0"
-                AllowDrop="True"
-                PreviewDragOver="ImagePathTextBox_PreviewDragOver"
-                Drop="ImagePathTextBox_Drop"
-                Style="{StaticResource MaterialDesignTextBox}"
-                materialDesign:HintAssist.Hint="画像パスを入力" />
+        <!-- 左メニュー -->
+        <ScrollViewer Grid.Column="0"
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="10">
+                <TextBlock Text="機能メニュー" FontWeight="Bold" FontSize="18" Margin="0,0,0,10"/>
 
-            <Button
-                Content="パス決定"
-                Command="{Binding LoadImageCommand}"
-                Width="100"
-                Style="{StaticResource MaterialDesignRaisedButton}" />
-        </StackPanel>
-        
-        <!-- メイン領域 -->
-        <Grid Grid.Row="1">   <!-- ← ここが追加されてなかったからズレとった -->
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1*"/>
-                <ColumnDefinition Width="1*"/>
-            </Grid.ColumnDefinitions>
+                <Button Content="画像パス入力"
+                        Style="{StaticResource MainMenuButtonStyle}"
+                        Click="OnShowPathInputDialog" />
 
-            <!-- 左: 画像 + 描画用Canvas -->
-            <Grid Grid.Column="0">
-                <Image
-                    x:Name="InputImageDisplay"
-                    Stretch="Uniform"
-                    Source="{Binding InputBitmap}" />
+                <Button Content="線描画"
+                        Style="{StaticResource MainMenuButtonStyle}" />
 
-                <!-- 透明 Canvas を画像の上に重ねる -->
-                <Canvas x:Name="DrawCanvas"
-                        Background="Transparent"
-                        MouseDown="DrawCanvas_MouseDown"
-                        MouseMove="DrawCanvas_MouseMove"
-                        MouseUp="DrawCanvas_MouseUp"/>
+                <Button Content="クリア"
+                        Style="{StaticResource MainMenuButtonStyle}" />
+
+                <Button Content="保存"
+                        Style="{StaticResource MainMenuButtonStyle}" />
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- 右側 -->
+        <Grid Grid.Column="1">
+
+            <!-- 下: 左右表示 -->
+            <Grid Margin="5,40,5,5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="1*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- 原図 -->
+                <Border Grid.Column="0"
+                        BorderBrush="Gray"
+                        BorderThickness="1"
+                        Margin="0,0,5,0">
+                    <Grid>
+                        <Image x:Name="InputImageDisplay"
+                               Stretch="Uniform"
+                               Source="{Binding InputBitmap}" />
+                        <Canvas x:Name="DrawCanvas"
+                                Background="Transparent"
+                                MouseDown="DrawCanvas_MouseDown"
+                                MouseMove="DrawCanvas_MouseMove"
+                                MouseUp="DrawCanvas_MouseUp"/>
+                    </Grid>
+                </Border>
+
+                <!-- プロット -->
+                <Border Grid.Column="1"
+                        BorderBrush="Gray"
+                        BorderThickness="1">
+                    <Image x:Name="GraphDisplay"
+                           Stretch="Uniform"
+                           Source="{Binding GraphBitmap}" />
+                </Border>
+
             </Grid>
-
-            <!-- 右: 読み取った数値をグラフ化した画像 -->
-            <Border
-                Grid.Column="1"
-                BorderBrush="Gray"
-                BorderThickness="1"
-                Margin="5,0,0,0"
-                Background="{DynamicResource MaterialDesignPaper}"
-                materialDesign:ElevationAssist.Elevation="Dp4">
-                <Image
-                    x:Name="GraphDisplay"
-                    Stretch="Uniform"
-                    Source="{Binding GraphBitmap}" />
-            </Border>
 
         </Grid>
 
-
     </Grid>
+
 </Window>
