@@ -7,6 +7,14 @@
       "RelativeMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|solutionrelative:viewmodels\\mainviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|c:\\users\\owner\\desktop\\my_program\\kyo-pro\\80_autoplot\\autoplot\\views\\axiscalibrationdialog.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|solutionrelative:views\\axiscalibrationdialog.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|c:\\users\\owner\\desktop\\my_program\\kyo-pro\\80_autoplot\\autoplot\\views\\axiscalibrationdialog.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|solutionrelative:views\\axiscalibrationdialog.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|c:\\users\\owner\\desktop\\my_program\\kyo-pro\\80_autoplot\\autoplot\\services\\imageprocessingservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|solutionrelative:services\\imageprocessingservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -58,18 +66,19 @@
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "ImageProcessingService.cs",
-              "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Services\\ImageProcessingService.cs",
-              "RelativeDocumentMoniker": "Services\\ImageProcessingService.cs",
-              "ToolTip": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Services\\ImageProcessingService.cs",
-              "RelativeToolTip": "Services\\ImageProcessingService.cs",
-              "ViewState": "AQIAABIAAAAAAAAAAADgvxYAAAAAAAAA",
+              "Title": "AxisCalibrationDialog.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Views\\AxisCalibrationDialog.xaml.cs",
+              "RelativeDocumentMoniker": "Views\\AxisCalibrationDialog.xaml.cs",
+              "ToolTip": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Views\\AxisCalibrationDialog.xaml.cs",
+              "RelativeToolTip": "Views\\AxisCalibrationDialog.xaml.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAoAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-31T06:28:11.896Z"
+              "WhenOpened": "2025-12-31T07:33:08.372Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 5,
               "Title": "CurveData.cs",
               "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Models\\CurveData.cs",
               "RelativeDocumentMoniker": "Models\\CurveData.cs",
@@ -81,18 +90,19 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 11,
               "Title": "App.xaml",
               "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\App.xaml",
               "RelativeDocumentMoniker": "App.xaml",
               "ToolTip": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\App.xaml",
               "RelativeToolTip": "App.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-12-31T01:36:32.132Z"
+              "WhenOpened": "2025-12-31T01:36:32.132Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 7,
               "Title": "MainView.xaml",
               "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Views\\MainView.xaml",
               "RelativeDocumentMoniker": "Views\\MainView.xaml",
@@ -103,7 +113,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "OpenCvUtils.cs",
               "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Utils\\OpenCvUtils.cs",
               "RelativeDocumentMoniker": "Utils\\OpenCvUtils.cs",
@@ -121,14 +131,38 @@
               "RelativeDocumentMoniker": "ViewModels\\MainViewModel.cs",
               "ToolTip": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\ViewModels\\MainViewModel.cs",
               "RelativeToolTip": "ViewModels\\MainViewModel.cs",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAQAAAASAAAA",
+              "ViewState": "AQIAAIIAAAAAAAAAAAAmwI0AAAAXAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-12-27T06:24:46.215Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 2,
+              "Title": "AxisCalibrationDialog.xaml",
+              "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Views\\AxisCalibrationDialog.xaml",
+              "RelativeDocumentMoniker": "Views\\AxisCalibrationDialog.xaml",
+              "ToolTip": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Views\\AxisCalibrationDialog.xaml",
+              "RelativeToolTip": "Views\\AxisCalibrationDialog.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-12-31T08:05:27.056Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "ImageProcessingService.cs",
+              "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Services\\ImageProcessingService.cs",
+              "RelativeDocumentMoniker": "Services\\ImageProcessingService.cs",
+              "ToolTip": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Services\\ImageProcessingService.cs",
+              "RelativeToolTip": "Services\\ImageProcessingService.cs",
+              "ViewState": "AQIAABIAAAAAAAAAAADgvxYAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-31T06:28:11.896Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
               "Title": "MainView.xaml.cs",
               "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Views\\MainView.xaml.cs",
               "RelativeDocumentMoniker": "Views\\MainView.xaml.cs",
@@ -140,7 +174,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 6,
               "Title": "ImageProcessor.cs",
               "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\ImageProcessing\\ImageProcessor.cs",
               "RelativeDocumentMoniker": "ImageProcessing\\ImageProcessor.cs",
@@ -152,7 +186,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 8,
               "Title": "ImagePathDialog.xaml.cs",
               "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Views\\ImagePathDialog.xaml.cs",
               "RelativeDocumentMoniker": "Views\\ImagePathDialog.xaml.cs",
@@ -164,7 +198,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 10,
               "Title": "ImagePathDialog.xaml",
               "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Views\\ImagePathDialog.xaml",
               "RelativeDocumentMoniker": "Views\\ImagePathDialog.xaml",
@@ -175,7 +209,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 12,
               "Title": "ResourcePart.cs",
               "DocumentMoniker": "C:\\Users\\Owner\\AppData\\Local\\Temp\\.vsdbgsrc\\b49ace08f4cd26a4f275d628999a0f91ccb8a1892704530d9e6f5bd1284082f1\\ResourcePart.cs",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\AppData\\Local\\Temp\\.vsdbgsrc\\b49ace08f4cd26a4f275d628999a0f91ccb8a1892704530d9e6f5bd1284082f1\\ResourcePart.cs",
