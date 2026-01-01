@@ -42,3 +42,5 @@ C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\bin\Debug\net8.0-
 C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\bin\Debug\net8.0-windows\System.Drawing.Common.dll
 C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\Views\AxisCalibrationDialog.baml
 C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\Views\AxisCalibrationDialog.g.cs
+C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\Views\CurveDataCopyDialog.baml
+C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-windows\Views\CurveDataCopyDialog.g.cs

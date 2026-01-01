@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP
 C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\App.xaml
-4-1930470027
+5-415655186
 221477512864
-17256320892
+191517621567
 206-992814062
-old\MainWindow.xaml;Views\AxisCalibrationDialog.xaml;Views\ImagePathDialog.xaml;Views\MainView.xaml;
+old\MainWindow.xaml;Views\AxisCalibrationDialog.xaml;Views\CurveDataCopyDialog.xaml;Views\ImagePathDialog.xaml;Views\MainView.xaml;
 
 False
 

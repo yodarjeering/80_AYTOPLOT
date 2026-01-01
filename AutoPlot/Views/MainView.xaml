@@ -38,10 +38,23 @@
                 <Button Content="ノイズ除去"
                         Style="{StaticResource MainMenuButtonStyle}"
                         Command="{Binding NoiseRemovalCommand}" />
+
+                <Button Content="ノイズ除去完了"
+                        Style="{StaticResource MainMenuButtonStyle}"
+                        Command="{Binding NoiseRemovalCompleteCommand}" />
                         
+                <Button Content="抽出画像表示"
+                        Style="{StaticResource MainMenuButtonStyle}" 
+                        Command="{Binding OnShowUpdateGraphCommand}" /> 
+
                 <Button Content="原図表示"
                         Style="{StaticResource MainMenuButtonStyle}" 
                         Command="{Binding ShowOriginalImageCommand}" />
+                
+                <Button Content="データコピー"
+                        Command="{Binding CopyCurveDataCommand}"
+                        Style="{StaticResource MainMenuButtonStyle}" />
+
 
                 
 
