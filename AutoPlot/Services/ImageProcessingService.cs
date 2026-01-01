@@ -1,6 +1,7 @@
 using AutoPlot.ImageProcessing;
 using AutoPlot.Models;
 using OpenCvSharp;
+using System.Windows;
 
 namespace AutoPlot.Services
 {
@@ -8,16 +9,17 @@ namespace AutoPlot.Services
     {
         private readonly ImageProcessor _processor = new();
 
-        public CurveData Run(string path,
+        public CurveData Run(Mat inputImage,
                              double xMin, double xMax,
                              double yMin, double yMax,
                              string xScale, string yScale)
         {
-            return _processor.Process(path, xMin, xMax, yMin, yMax, xScale, yScale);
+            using var inputImage_clone = inputImage.Clone();
+            return _processor.Process(inputImage_clone, xMin, xMax, yMin, yMax, xScale, yScale);
         }
 
         
-        public Mat CreateRoiHighlightImage(Mat src, Rect roi)
+        public Mat CreateRoiHighlightImage(Mat src, OpenCvSharp.Rect roi)
         {
             Mat baseImage = new();
 
@@ -47,6 +49,28 @@ namespace AutoPlot.Services
             );
 
             return dimmed;
+        }
+        /// <summary>
+        /// ノイズマスクで指定された領域を白ピクセル化する
+        /// </summary>
+        public Mat ApplyNoiseMask(Mat plotArea, Mat noiseMask)
+        {
+            if (plotArea == null)
+                throw new ArgumentNullException(nameof(plotArea));
+
+            if (noiseMask == null)
+                throw new ArgumentNullException(nameof(noiseMask));
+
+            if (plotArea.Size() != noiseMask.Size())
+                throw new ArgumentException("plotArea と noiseMask のサイズが一致していません");
+
+            // 元画像を壊さないように clone
+            Mat result = plotArea.Clone();
+
+            // マスク部分を白にする
+            result.SetTo(Scalar.White, noiseMask); 
+
+            return result;
         }
     }
 }

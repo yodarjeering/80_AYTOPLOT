@@ -11,15 +11,14 @@ namespace AutoPlot.ImageProcessing
 {
     public class ImageProcessor
     {
-        public CurveData Process(string imagePath,
+        public CurveData Process(Mat inputImage,
                                  double xMinInput, double xMaxInput,
                                  double yMinInput, double yMaxInput,
                                  string xScale, string yScale)
         {
             // 画像読み込み
-            Mat imgBgr = OpenCvUtils.ReadImage(imagePath);
             Mat imgRgb = new();
-            Cv2.CvtColor(imgBgr, imgRgb, ColorConversionCodes.BGR2RGB);
+            Cv2.CvtColor(inputImage, imgRgb, ColorConversionCodes.BGR2RGB);
 
             Mat gray = new();
             Cv2.CvtColor(imgRgb, gray, ColorConversionCodes.RGB2GRAY);
@@ -46,19 +45,14 @@ namespace AutoPlot.ImageProcessing
 
             Rect roi = CalculatePlotRoi(verticalSegments, horizontalSegments);
 
-            // 元画像からROIだけ切り出す
-            Mat plotArea = new Mat(bw, roi);
-
-            
-            // 以降は plotArea だけで処理
-            // ProcessPlot(plotArea);
-
-
             Mat grid = new();
             Cv2.BitwiseOr(horizontalLines, verticalLines, grid);
 
             Mat bwNoGrid = new();
             Cv2.Subtract(bw, grid, bwNoGrid);
+
+            // 元画像からROIだけ切り出す
+            Mat plotArea = new Mat(bwNoGrid, roi);
 
             // 連結成分解析
             Mat labels = new();
@@ -66,14 +60,14 @@ namespace AutoPlot.ImageProcessing
             Mat centroids = new();
 
             int numLabels = Cv2.ConnectedComponentsWithStats(
-                bwNoGrid,
+                plotArea,
                 labels,
                 stats,
                 centroids,
                 PixelConnectivity.Connectivity8
                 );
 
-            Mat clean = Mat.Zeros(bwNoGrid.Size(), MatType.CV_8UC1);
+            Mat clean = Mat.Zeros(plotArea.Size(), MatType.CV_8UC1);
             int minArea = 10;
 
             for (int i = 1; i < numLabels; i++)
@@ -216,31 +210,6 @@ namespace AutoPlot.ImageProcessing
             }
 
             return segments;
-        }
-
-        // ROI領域をハイライトする画像を作成する関数
-        Mat CreateRoiHighlightImage(Mat src, Rect roi)
-        {
-            // ① 元画像をカラー化（グレー用）
-            Mat gray = new();
-            Cv2.CvtColor(src, gray, ColorConversionCodes.GRAY2BGR);
-
-            // ② 全体を暗く（グレー化）
-            Mat dimmed = new();
-            gray.ConvertTo(dimmed, -1, 0.5, 0); // 明るさ50%
-
-            // ③ ROI部分だけ元画像をコピー
-            src[roi].CopyTo(dimmed[roi]);
-
-            // ROIに枠線を追加
-            Cv2.Rectangle(
-            dimmed,
-            roi,
-            new Scalar(0, 255, 0), // 緑
-            2
-            );
-
-            return dimmed;
         }
 
     }
