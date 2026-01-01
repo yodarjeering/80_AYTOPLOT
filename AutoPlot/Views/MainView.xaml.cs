@@ -1,5 +1,6 @@
 using System.Windows;
 using AutoPlot.ViewModels;
+using AutoPlot.Models;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -10,6 +11,8 @@ namespace AutoPlot.Views
     {
         private bool isDrawing = false;
         private Polyline currentLine;
+        private Point _prevPoint;
+
         
 
         public MainView()
@@ -53,33 +56,52 @@ namespace AutoPlot.Views
         private void DrawCanvas_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.LeftButton != MouseButtonState.Pressed) return;
+            
+            var vm = DataContext as MainViewModel;
+            if (vm == null)
+                return;
+            
+            if (vm.DisplayState != DisplayState.NoiseRemoval) return;
+
+            vm.CanvasWidth  = DrawCanvas.ActualWidth;
+            vm.CanvasHeight = DrawCanvas.ActualHeight;
+
 
             // 描画開始
             isDrawing = true;
+            _prevPoint = e.GetPosition(DrawCanvas);
 
-            currentLine = new Polyline
-            {
-                Stroke = Brushes.Red,      // 線の色
-                StrokeThickness = 2        // 太さ
-            };
-
-            DrawCanvas.Children.Add(currentLine);
+            currentLine = new Polyline();
 
             var pos = e.GetPosition(DrawCanvas);
-            currentLine.Points.Add(pos);
+            currentLine.Points.Add(_prevPoint);
+            DrawCanvas.Children.Add(currentLine);
         }
 
         private void DrawCanvas_MouseMove(object sender, MouseEventArgs e)
         {
             if (!isDrawing) return;
 
-            var pos = e.GetPosition(DrawCanvas);
-            currentLine.Points.Add(pos);
+            var vm = DataContext as MainViewModel;
+            if (vm == null)
+                return;
+
+            if (vm.DisplayState != DisplayState.NoiseRemoval) return;
+
+            Point curr = e.GetPosition(DrawCanvas);
+            currentLine.Points.Add(curr);
+
+            // ★ 追加：Matマスクにも描く
+            vm.DrawNoiseMaskFromCanvas(_prevPoint, curr);
+
+            _prevPoint = curr;
+                
         }
 
         private void DrawCanvas_MouseUp(object sender, MouseButtonEventArgs e)
         {
             isDrawing = false;
+            currentLine = null;
         }
 
         private void OnShowPathInputDialog(object sender, RoutedEventArgs e)

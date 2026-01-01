@@ -34,13 +34,16 @@
                 <Button Content="軸キャリブレーション"
                         Style="{StaticResource MainMenuButtonStyle}" 
                         Command="{Binding AxisCalibrationCommand}" />
+
+                <Button Content="ノイズ除去"
+                        Style="{StaticResource MainMenuButtonStyle}"
+                        Command="{Binding NoiseRemovalCommand}" />
                         
                 <Button Content="原図表示"
                         Style="{StaticResource MainMenuButtonStyle}" 
                         Command="{Binding ShowOriginalImageCommand}" />
 
-                <Button Content="保存"
-                        Style="{StaticResource MainMenuButtonStyle}" />
+                
 
             </StackPanel>
         </ScrollViewer>
