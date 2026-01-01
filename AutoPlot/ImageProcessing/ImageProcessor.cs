@@ -1,49 +1,82 @@
 using OpenCvSharp;
 using AutoPlot.Models;
-using System.Collections.Generic;
-using System.Linq;
 using MathNet.Numerics.Statistics;
 using AutoPlot.ImageProcessing.Helpers;
-using AutoPlot.Utils;        // OpenCvUtils クラス
-using System;
+
 
 namespace AutoPlot.ImageProcessing
 {
     public class ImageProcessor
     {
-        public CurveData Process(Mat inputImage,
-                                 double xMinInput, double xMaxInput,
-                                 double yMinInput, double yMaxInput,
-                                 string xScale, string yScale)
+
+        public OpenCvSharp.Rect DetectPlotRoi(Mat workingImage)
         {
-            // 画像読み込み
-            Mat imgRgb = new();
-            Cv2.CvtColor(inputImage, imgRgb, ColorConversionCodes.BGR2RGB);
-
+            // グレースケール
             Mat gray = new();
-            Cv2.CvtColor(imgRgb, gray, ColorConversionCodes.RGB2GRAY);
+            Cv2.CvtColor(workingImage, gray, ColorConversionCodes.BGR2GRAY);
 
+            // 二値化
             Mat bw = new();
-            Cv2.Threshold(gray, bw, 0, 255, ThresholdTypes.BinaryInv | ThresholdTypes.Otsu);
+            Cv2.Threshold(gray, bw, 0, 255,
+                ThresholdTypes.BinaryInv | ThresholdTypes.Otsu);
 
-            // 横線・縦線除去
-            Mat hKernel = Cv2.GetStructuringElement(MorphShapes.Rect, new(40, 1));
+            // 横線・縦線抽出
+            Mat hKernel = Cv2.GetStructuringElement(
+                MorphShapes.Rect, new OpenCvSharp.Size(40, 1));
             Mat horizontalLines = new();
-            Cv2.MorphologyEx(bw, horizontalLines, MorphTypes.Open, hKernel);
+            Cv2.MorphologyEx(bw, horizontalLines,
+                MorphTypes.Open, hKernel);
 
-            Mat vKernel = Cv2.GetStructuringElement(MorphShapes.Rect, new(1, 40));
+            Mat vKernel = Cv2.GetStructuringElement(
+                MorphShapes.Rect, new OpenCvSharp.Size(1, 40));
             Mat verticalLines = new();
-            Cv2.MorphologyEx(bw, verticalLines, MorphTypes.Open, vKernel);
+            Cv2.MorphologyEx(bw, verticalLines,
+                MorphTypes.Open, vKernel);
 
-            // Mat → LineSegmentPoint
-            List<LineSegmentPoint> horizontalSegments =
+            // LineSegmentPoint 化
+            var horizontalSegments =
                 ExtractLineSegments(horizontalLines, isHorizontal: true);
 
-            List<LineSegmentPoint> verticalSegments =
+            var verticalSegments =
                 ExtractLineSegments(verticalLines, isHorizontal: false);
 
+            // ★ ROI はここで一度だけ決める
+            OpenCvSharp.Rect roi =
+                CalculatePlotRoi(verticalSegments, horizontalSegments);
 
-            Rect roi = CalculatePlotRoi(verticalSegments, horizontalSegments);
+            return roi;
+        }
+
+        public CurveData ProcessPlotArea(
+            Mat plotArea,                 // ROI切り出し済み
+            OpenCvSharp.Rect roi,          // 呼び出し元の確定値
+            OpenCvSharp.Size workingImageSize,         // overlay用
+            double xMinInput, double xMaxInput,
+            double yMinInput, double yMaxInput,
+            string xScale, string yScale)
+        {
+            // plotArea はすでに ROI 内なので、そのまま使う
+            Mat gray = new();
+
+            Cv2.CvtColor(plotArea, gray, ColorConversionCodes.BGR2GRAY);
+
+            Mat bw = new();
+            Cv2.Threshold(gray, bw, 0, 255,
+                ThresholdTypes.BinaryInv | ThresholdTypes.Otsu);
+
+            // === グリッド除去（ROI内）===
+            Mat hKernel = Cv2.GetStructuringElement(
+                MorphShapes.Rect, new OpenCvSharp.Size(40, 1));
+            Mat horizontalLines = new();
+            Cv2.MorphologyEx(bw, horizontalLines,
+                MorphTypes.Open, hKernel);
+
+
+            Mat vKernel = Cv2.GetStructuringElement(
+                MorphShapes.Rect, new OpenCvSharp.Size(1, 40));
+            Mat verticalLines = new();
+            Cv2.MorphologyEx(bw, verticalLines,
+                MorphTypes.Open, vKernel);
 
             Mat grid = new();
             Cv2.BitwiseOr(horizontalLines, verticalLines, grid);
@@ -51,23 +84,19 @@ namespace AutoPlot.ImageProcessing
             Mat bwNoGrid = new();
             Cv2.Subtract(bw, grid, bwNoGrid);
 
-            // 元画像からROIだけ切り出す
-            Mat plotArea = new Mat(bwNoGrid, roi);
 
-            // 連結成分解析
+            // === 連結成分解析 ===
             Mat labels = new();
             Mat stats = new();
             Mat centroids = new();
 
             int numLabels = Cv2.ConnectedComponentsWithStats(
-                plotArea,
-                labels,
-                stats,
-                centroids,
-                PixelConnectivity.Connectivity8
-                );
+                bwNoGrid, labels, stats, centroids,
+                PixelConnectivity.Connectivity8);
 
-            Mat clean = Mat.Zeros(plotArea.Size(), MatType.CV_8UC1);
+            Mat clean = Mat.Zeros(bwNoGrid.Size(), MatType.CV_8UC1);
+
+
             int minArea = 10;
 
             for (int i = 1; i < numLabels; i++)
@@ -75,72 +104,88 @@ namespace AutoPlot.ImageProcessing
                 int area = stats.Get<int>(i, (int)ConnectedComponentsTypes.Area);
                 if (area >= minArea)
                 {
-                    Cv2.Compare(labels, i, clean,CmpType.EQ);
+                    using var mask = new Mat();
+                    Cv2.Compare(labels, i, mask, CmpType.EQ);
+                    Cv2.BitwiseOr(clean, mask, clean);
                 }
             }
 
-            Mat kernel = Cv2.GetStructuringElement(MorphShapes.Rect, new(3, 3));
-            Mat clean2 = new();
-            Cv2.MorphologyEx(clean, clean2, MorphTypes.Close, kernel);
+            // TBD
+            Cv2.ImShow("debug clean", clean);
+            Cv2.WaitKey(0);   // キー押すまで止まる
+            Cv2.DestroyAllWindows();
 
-            // 白ピクセル座標取得
-            var points = new List<ImagePoint>();
-            for (int y = 0; y < clean2.Rows; y++)
+            Mat kernel = Cv2.GetStructuringElement(
+                MorphShapes.Rect, new OpenCvSharp.Size(3, 3));
+            Mat clean2 = new();
+            Cv2.MorphologyEx(clean, clean2,
+                MorphTypes.Close, kernel);
+
+            // === Xごとに中央値Y抽出 ===
+            var pointsPx = new List<ImagePoint>();
+
+            for (int x = 0; x < clean2.Cols; x++)
             {
-                for (int x = 0; x < clean2.Cols; x++)
+                var ys = new List<int>();
+
+                for (int y = 0; y < clean2.Rows; y++)
                 {
                     if (clean2.At<byte>(y, x) > 0)
-                        points.Add(new ImagePoint { X = x, Y = y });
+                        ys.Add(y);
+                }
+
+                if (ys.Count > 0)
+                {
+                    pointsPx.Add(new ImagePoint
+                    {
+                        X = x,
+                        Y = Statistics.Median(ys.Select(v => (double)v))
+                    });
                 }
             }
 
-            // Xごとに中央値 y を求める
-            var grouped = points.GroupBy(p => (int)p.X)
-                                .Select(g =>
-                                {
-                                    var ys = g.Select(p => p.Y).ToList();
-                                    return new ImagePoint
-                                    {
-                                        X = g.Key,
-                                        Y = Statistics.Median(ys)
-                                    };
-                                })
-                                .OrderBy(p => p.X)
-                                .ToList();
+            // === px → real ===
+            double[] xPx = pointsPx.Select(p => p.X).ToArray();
+            double[] yPx = pointsPx.Select(p => p.Y).ToArray();
 
-            var data = new CurveData { Points = grouped };
+            double[] xReal = PixelConverter.PxToReal(
+                xPx, 0, clean2.Cols,
+                xMinInput, xMaxInput, xScale);
 
-            // px → real
-            double[] xPx = grouped.Select(p => p.X).ToArray();
-            double[] yPx = grouped.Select(p => p.Y).ToArray();
+            double[] yReal = PixelConverter.PxToReal(
+                yPx, 0, clean2.Rows,
+                yMinInput, yMaxInput, yScale, true);
 
-            int xPxMin = 0;
-            int xPxMax = clean2.Cols;
-            int yPxMin = 0;
-            int yPxMax = clean2.Rows;
-
-            double[] xReal = PixelConverter.PxToReal(xPx, xPxMin, xPxMax,
-                                                     xMinInput, xMaxInput, xScale);
-            double[] yReal = PixelConverter.PxToReal(yPx, yPxMin, yPxMax,
-                                                     yMinInput, yMaxInput, yScale, true);
-
-            for (int i = 0; i < data.Points.Count; i++)
+            var realPoints = new List<ImagePoint>();
+            for (int i = 0; i < xReal.Length; i++)
             {
-                data.Points[i] = new ImagePoint
+                realPoints.Add(new ImagePoint
                 {
                     X = xReal[i],
                     Y = yReal[i]
-                };
+                });
             }
+
+            // === Overlay 作成（原図サイズ）===
+            var overlay = CreateGraphOverlay(
+                workingImageSize,
+                pointsPx.Select(p =>
+                    new OpenCvSharp.Point(
+                        p.X + roi.X,
+                        p.Y + roi.Y)).ToList(),
+                new OpenCvSharp.Point(roi.X, roi.Y)
+            );
 
             return new CurveData
             {
-                Points = points,
-                PlotRoi = roi   // ★ ここが肝
+                Points = realPoints,
+                PlotRoi = roi,
+                OverlayGraphMat = overlay
             };
         }
 
-        Rect CalculatePlotRoi(
+
+        OpenCvSharp.Rect CalculatePlotRoi(
             List<LineSegmentPoint> verticalLines,
             List<LineSegmentPoint> horizontalLines)
         {
@@ -155,7 +200,7 @@ namespace AutoPlot.ImageProcessing
             int yMax = horizontalLines.Max(l => Math.Max(l.P1.Y, l.P2.Y));
 
 
-            return new Rect(
+            return new OpenCvSharp.Rect(
                 xMin,
                 yMin,
                 xMax - xMin,
@@ -169,7 +214,7 @@ namespace AutoPlot.ImageProcessing
         {
             Cv2.FindContours(
                 lineImage,
-                out Point[][] contours,
+                out OpenCvSharp.Point[][] contours,
                 out _,
                 RetrievalModes.External,
                 ContourApproximationModes.ApproxSimple
@@ -179,7 +224,7 @@ namespace AutoPlot.ImageProcessing
 
             foreach (var c in contours)
             {
-                Rect r = Cv2.BoundingRect(c);
+                OpenCvSharp.Rect r = Cv2.BoundingRect(c);
 
                 // 方向判定
                 if (isHorizontal && r.Width <= r.Height * 5)
@@ -193,16 +238,16 @@ namespace AutoPlot.ImageProcessing
                 {
                     int y = r.Top + r.Height / 2;
                     seg = new LineSegmentPoint(
-                        new Point(r.Left,  y),
-                        new Point(r.Right, y)
+                        new OpenCvSharp.Point(r.Left,  y),
+                        new OpenCvSharp.Point(r.Right, y)
                     );
                 }
                 else
                 {
                     int x = r.Left + r.Width / 2;
                     seg = new LineSegmentPoint(
-                        new Point(x, r.Top),
-                        new Point(x, r.Bottom)
+                        new OpenCvSharp.Point(x, r.Top),
+                        new OpenCvSharp.Point(x, r.Bottom)
                     );
                 }
 
@@ -210,6 +255,32 @@ namespace AutoPlot.ImageProcessing
             }
 
             return segments;
+        }
+
+        private Mat CreateGraphOverlay(
+            OpenCvSharp.Size imageSize,
+            List<OpenCvSharp.Point> graphPoints,
+            OpenCvSharp.Point roiOffset)
+        {
+            // 透明背景（RGBA）
+            Mat overlay = new Mat(
+                imageSize,
+                MatType.CV_8UC4,
+                Scalar.All(0)
+            );
+
+            for (int i = 1; i < graphPoints.Count; i++)
+            {
+                Cv2.Line(
+                    overlay,
+                    graphPoints[i - 1],
+                    graphPoints[i],
+                    new Scalar(255, 0, 0, 255), // ←こいつは必要
+                    2
+                );
+            }
+
+            return overlay;
         }
 
     }

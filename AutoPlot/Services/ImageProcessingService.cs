@@ -9,15 +9,22 @@ namespace AutoPlot.Services
     {
         private readonly ImageProcessor _processor = new();
 
-        public CurveData Run(Mat inputImage,
-                             double xMin, double xMax,
-                             double yMin, double yMax,
-                             string xScale, string yScale)
+        public OpenCvSharp.Rect RunRoi(Mat inputImage)
         {
             using var inputImage_clone = inputImage.Clone();
-            return _processor.Process(inputImage_clone, xMin, xMax, yMin, yMax, xScale, yScale);
+            return _processor.DetectPlotRoi(inputImage_clone);
         }
 
+        public CurveData RunPlotArea(Mat plotArea,                 // ROI切り出し済み
+                                    OpenCvSharp.Rect roi,          // 呼び出し元の確定値
+                                    OpenCvSharp.Size workingImageSize,         // overlay用
+                                    double xMinInput, double xMaxInput,
+                                    double yMinInput, double yMaxInput,
+                                    string xScale, string yScale)
+        {
+            using var plotArea_clone = plotArea.Clone();
+            return _processor.ProcessPlotArea(plotArea_clone,roi,workingImageSize,xMinInput,xMaxInput,yMinInput,yMaxInput,xScale,yScale);
+        }
         
         public Mat CreateRoiHighlightImage(Mat src, OpenCvSharp.Rect roi)
         {
