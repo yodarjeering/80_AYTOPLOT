@@ -7,8 +7,12 @@ using CommunityToolkit.Mvvm.Input;
 using OpenCvSharp;
 using OpenCvSharp.WpfExtensions;
 using System.Windows;
-using System.Windows.Input;
 using System.Windows.Media.Imaging;
+// debug用
+using System.Text;
+using System.Diagnostics;
+
+
 
 namespace AutoPlot.ViewModels
 {
@@ -37,6 +41,13 @@ namespace AutoPlot.ViewModels
         private Mat _workingImage; //　キャリブレーション＆ノイズ除去の基準画像
         public double CanvasWidth  { get; set; }
         public double CanvasHeight { get; set; }
+        private BitmapSource _graphBitmap;
+        
+        public BitmapSource GraphBitmap
+        {
+            get => _graphBitmap;
+            set => SetProperty(ref _graphBitmap, value);
+        }
 
 
         // ===== Noise Removal =====
@@ -64,6 +75,9 @@ namespace AutoPlot.ViewModels
         public IRelayCommand ShowOriginalImageCommand { get; }
         public IRelayCommand NoiseRemovalCommand { get; }
         public IRelayCommand NoiseRemovalCompleteCommand { get; }
+        public IRelayCommand OnShowUpdateGraphCommand { get; }
+        public IRelayCommand CopyCurveDataCommand { get; }
+
 
         public MainViewModel()
         {
@@ -72,6 +86,9 @@ namespace AutoPlot.ViewModels
             ShowOriginalImageCommand = new RelayCommand(OnShowOriginalImage);
             NoiseRemovalCommand = new RelayCommand(OnNoiseRemoval);
             NoiseRemovalCompleteCommand = new RelayCommand(OnNoiseRemovalComplete);
+            OnShowUpdateGraphCommand = new RelayCommand(OnShowUpdateGraph); //←追加
+            CopyCurveDataCommand = new RelayCommand(OnCopyCurveData);
+
         }
 
         // =========================================================
@@ -83,24 +100,13 @@ namespace AutoPlot.ViewModels
                 return;
 
             ResultText = "処理中…";
-
             _originalBitmap = OpenCvUtils.LoadBitmap(ImagePath);
             InputBitmap = _originalBitmap;
             _displayState = DisplayState.Original;
             Mat inputImage = OpenCvUtils.BitmapImageToMat(_originalBitmap);
             
-            var data = await Task.Run(() =>
-                _service.Run(
-                    inputImage,
-                    0.5, 3,
-                    1, 1000,
-                    "linear", "log"
-                ));
-
-            CurveData = data;
-            _roi = data.PlotRoi;
-
-            ResultText = $"点数: {data.Points.Count}";
+            _roi = await Task.Run(() =>
+                _service.RunRoi(inputImage));
 
             _workingImage?.Dispose();
             _workingImage = inputImage.Clone();
@@ -158,25 +164,24 @@ namespace AutoPlot.ViewModels
             _axisSettings.YMax = vm.YMax;
             _axisSettings.IsYLog = vm.IsYLog;
 
-            var data = _service.Run(
-                _workingImage,
+            _plotArea?.Dispose();
+            _plotArea = new Mat(_workingImage, _roi).Clone();
+
+            var data = _service.RunPlotArea(
+                _plotArea,
+                _roi,
+                _workingImage.Size(),
                 _axisSettings.XMin, _axisSettings.XMax,
                 _axisSettings.YMin, _axisSettings.YMax,
                 _axisSettings.IsXLog ? "log" : "linear",
                 _axisSettings.IsYLog ? "log" : "linear"
             );
 
-            CurveData = data;
+            CurveData = data; 
             _roi = data.PlotRoi;
 
-            // using var src = OpenCvUtils.BitmapImageToMat(InputBitmap);
-            // _plotArea = new Mat(src, _roi).Clone();
-            // ★ plotArea は「結果」として作る
-            _plotArea?.Dispose();
-            _plotArea = new Mat(_workingImage, _roi).Clone();
-
             UpdateDisplay();
-            _displayState = DisplayState.AxisCalibrated;
+            _displayState = DisplayState.AxisCalibrated; 
         }
 
         // =========================================================
@@ -231,19 +236,53 @@ namespace AutoPlot.ViewModels
 
         private void OnNoiseRemovalComplete()
         {
-            if (_noiseMask == null || _plotArea == null)
+            if (_plotArea == null || _workingImage == null || _noiseMask == null)
                 return;
 
+            // ① plotArea にノイズ反映（ここで初めて確定）
             _plotArea = _service.ApplyNoiseMask(_plotArea, _noiseMask);
-            // ★ 基準画像を更新
-            _workingImage?.Dispose();
-            _workingImage = _plotArea.Clone();
 
+            // ② workingImage に貼り戻す
+            using var updated = _workingImage.Clone();
+            using var roiMat = new Mat(updated, _roi);
+            _plotArea.CopyTo(roiMat);
+
+            _workingImage.Dispose();
+            _workingImage = updated.Clone();
+
+            // ③ 表示更新（workingImage を見る）
+            InputBitmap = BitmapSourceConverter.ToBitmapSource(_workingImage);
+
+            // ④ ここで初めてマスクを破棄
             _noiseMask.Dispose();
             _noiseMask = null;
+            
+            // ★ ここで plotArea を元に再処理
+            CurveData = _service.RunPlotArea(
+                _plotArea,
+                _roi,
+                _workingImage.Size(),
+                _axisSettings.XMin, _axisSettings.XMax,
+                _axisSettings.YMin, _axisSettings.YMax,
+                _axisSettings.IsXLog ? "log" : "linear",
+                _axisSettings.IsYLog ? "log" : "linear"
+            );
 
+            // TBD
+            // var sb = new StringBuilder();
+
+            // int showCount = Math.Min(100, CurveData.Points.Count);
+            // for (int i = 0; i < showCount; i++)
+            // {
+            //     sb.AppendLine($"[{i}] X={CurveData.Points[i].X}, Y={CurveData.Points[i].Y}");
+            // }
+
+            // // TBD
+            // Debug.WriteLine(sb.ToString());
+
+            
             _displayState = DisplayState.AxisCalibrated;
-            UpdateDisplay();
+
         }
 
         // =========================================================
@@ -299,5 +338,110 @@ namespace AutoPlot.ViewModels
                    p.X < _plotArea.Width &&
                    p.Y < _plotArea.Height;
         }
+
+        private void UpdateDisplayWithOverlay(CurveData data)
+        {
+            if (data == null || _workingImage == null)
+                return;
+
+            using var baseImg = _workingImage.Clone();
+
+            if (baseImg.Channels() == 4)
+                Cv2.CvtColor(baseImg, baseImg, ColorConversionCodes.BGRA2BGR);
+
+            var overlay = data.OverlayGraphMat;
+            if (overlay == null)
+                return;
+
+            // ★ サイズが違ったら即エラーにする
+            if (overlay.Size() != baseImg.Size())
+            {
+                MessageBox.Show(
+                    $"Overlay size mismatch\n" +
+                    $"Base: {baseImg.Size()}\n" +
+                    $"Overlay: {overlay.Size()}",
+                    "UpdateDisplayWithOverlay ERROR"
+                );
+                return;
+            }
+
+            using var alpha = new Mat();
+            Cv2.ExtractChannel(overlay, alpha, 3);
+
+            using var overlayBgr = new Mat();
+            Cv2.CvtColor(overlay, overlayBgr, ColorConversionCodes.BGRA2BGR);
+
+            overlayBgr.CopyTo(baseImg, alpha);
+
+            InputBitmap = BitmapSourceConverter.ToBitmapSource(baseImg);
+            // 抽出したグラフを描画
+            OnShowExtractedGraph(CurveData);
+        }
+
+
+        private void OnShowUpdateGraph(){
+            _displayState = DisplayState.GraphPlot;
+            UpdateDisplayWithOverlay(CurveData);
+        }
+
+        private void OnShowExtractedGraph(CurveData data)
+        {
+            var mat = OpenCvUtils.RenderGraphFromCurveData(
+                data,
+                600, 400,
+                _axisSettings.XMin,
+                _axisSettings.XMax,
+                _axisSettings.YMin,
+                _axisSettings.YMax,
+                _axisSettings.IsXLog,
+                _axisSettings.IsYLog
+            );
+
+            GraphBitmap = BitmapSourceConverter.ToBitmapSource(mat);
+        }
+
+        private string BuildCurveDataText(CurveData data)
+        {
+            if (data?.Points == null || data.Points.Count == 0)
+                return string.Empty;
+
+            var sb = new StringBuilder();
+
+            foreach (var p in data.Points)
+            {
+                // TBD ここをスペースでなく 「,」区切りにする？
+                sb.AppendLine($"{p.X:G6}\t{p.Y:G6}");
+            }
+
+            return sb.ToString();
+        }
+        
+        private void OnCopyCurveData()
+        {
+            if (CurveData == null)
+                return;
+
+            string text = BuildCurveDataText(CurveData);
+
+            var vm = new CurveDataCopyDialogViewModel(text);
+
+            var dialog = new CurveDataCopyDialog
+            {
+                DataContext = vm,
+                Owner = Application.Current.MainWindow
+            };
+
+            dialog.ShowDialog();
+        }
+
+
+
     }
 }
+
+// TBD debug
+        // MessageBox.Show(
+        //     $"Overlay size mismatch\n" +
+        //     $"base: {baseImg.Size()}\n" +
+        //     $"overlay: {data.OverlayGraphMat.Size()}"
+        // );
