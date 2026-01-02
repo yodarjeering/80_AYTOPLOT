@@ -169,6 +169,7 @@ namespace AutoPlot.ViewModels
 
             var data = _service.RunPlotArea(
                 _plotArea,
+                null, // ←ここはダミー
                 _roi,
                 _workingImage.Size(),
                 _axisSettings.XMin, _axisSettings.XMax,
@@ -240,7 +241,9 @@ namespace AutoPlot.ViewModels
                 return;
 
             // ① plotArea にノイズ反映（ここで初めて確定）
+            Mat plotAreaForGrid = _plotArea.Clone();   // ← ノイズマスク未適用
             _plotArea = _service.ApplyNoiseMask(_plotArea, _noiseMask);
+            Mat plotAreaForAnalysis = _plotArea;       // ← ノイズマスク済み
 
             // ② workingImage に貼り戻す
             using var updated = _workingImage.Clone();
@@ -256,10 +259,11 @@ namespace AutoPlot.ViewModels
             // ④ ここで初めてマスクを破棄
             _noiseMask.Dispose();
             _noiseMask = null;
-            
+
             // ★ ここで plotArea を元に再処理
             CurveData = _service.RunPlotArea(
-                _plotArea,
+                plotAreaForGrid,
+                plotAreaForAnalysis,
                 _roi,
                 _workingImage.Size(),
                 _axisSettings.XMin, _axisSettings.XMax,

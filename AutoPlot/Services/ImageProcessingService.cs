@@ -15,15 +15,17 @@ namespace AutoPlot.Services
             return _processor.DetectPlotRoi(inputImage_clone);
         }
 
-        public CurveData RunPlotArea(Mat plotArea,                 // ROI切り出し済み
+        public CurveData RunPlotArea(Mat plotAreaForGrid,                 // ROI切り出し済み
+                                    Mat plotAreaForAnalysis,
                                     OpenCvSharp.Rect roi,          // 呼び出し元の確定値
                                     OpenCvSharp.Size workingImageSize,         // overlay用
                                     double xMinInput, double xMaxInput,
                                     double yMinInput, double yMaxInput,
                                     string xScale, string yScale)
         {
-            using var plotArea_clone = plotArea.Clone();
-            return _processor.ProcessPlotArea(plotArea_clone,roi,workingImageSize,xMinInput,xMaxInput,yMinInput,yMaxInput,xScale,yScale);
+            // using var plotAreaForGrid_ = plotAreaForGrid.Clone();
+            // using var plotAreaForAnalysis_ = plotAreaForAnalysis.Clone();
+            return _processor.ProcessPlotArea(plotAreaForGrid,plotAreaForAnalysis,roi,workingImageSize,xMinInput,xMaxInput,yMinInput,yMaxInput,xScale,yScale);
         }
         
         public Mat CreateRoiHighlightImage(Mat src, OpenCvSharp.Rect roi)
