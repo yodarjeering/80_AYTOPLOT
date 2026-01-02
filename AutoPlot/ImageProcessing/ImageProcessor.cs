@@ -2,6 +2,7 @@ using OpenCvSharp;
 using AutoPlot.Models;
 using MathNet.Numerics.Statistics;
 using AutoPlot.ImageProcessing.Helpers;
+using System.Windows;
 
 
 namespace AutoPlot.ImageProcessing
@@ -48,7 +49,8 @@ namespace AutoPlot.ImageProcessing
         }
 
         public CurveData ProcessPlotArea(
-            Mat plotArea,                 // ROI切り出し済み
+            Mat plotAreaForGrid,                 // ROI切り出し済み
+            Mat plotAreaForAnalysis,
             OpenCvSharp.Rect roi,          // 呼び出し元の確定値
             OpenCvSharp.Size workingImageSize,         // overlay用
             double xMinInput, double xMaxInput,
@@ -58,7 +60,7 @@ namespace AutoPlot.ImageProcessing
             // plotArea はすでに ROI 内なので、そのまま使う
             Mat gray = new();
 
-            Cv2.CvtColor(plotArea, gray, ColorConversionCodes.BGR2GRAY);
+            Cv2.CvtColor(plotAreaForGrid, gray, ColorConversionCodes.BGR2GRAY);
 
             Mat bw = new();
             Cv2.Threshold(gray, bw, 0, 255,
@@ -84,6 +86,13 @@ namespace AutoPlot.ImageProcessing
             Mat bwNoGrid = new();
             Cv2.Subtract(bw, grid, bwNoGrid);
 
+            // ノイズマスク適用
+            if(plotAreaForAnalysis!=null){
+                Mat grayMask = new();
+
+                Cv2.CvtColor(plotAreaForAnalysis, grayMask, ColorConversionCodes.BGR2GRAY);
+                bwNoGrid.SetTo(0, grayMask);
+            }
 
             // === 連結成分解析 ===
             Mat labels = new();

@@ -3,12 +3,29 @@
   "WorkspaceRootPath": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|c:\\users\\owner\\desktop\\my_program\\kyo-pro\\80_autoplot\\autoplot\\utils\\opencvutils.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|solutionrelative:utils\\opencvutils.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Owner\\AppData\\Local\\Temp\\.vsdbgsrc\\8efe05f549c68086a8d766f6f1090ba20512cd36b49565f42d10f3cdafefedf3\\NativeMethods.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|c:\\users\\owner\\desktop\\my_program\\kyo-pro\\80_autoplot\\autoplot\\imageprocessing\\imageprocessor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|solutionrelative:imageprocessing\\imageprocessor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|c:\\users\\owner\\desktop\\my_program\\kyo-pro\\80_autoplot\\autoplot\\viewmodels\\mainviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|solutionrelative:viewmodels\\mainviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|c:\\users\\owner\\desktop\\my_program\\kyo-pro\\80_autoplot\\autoplot\\services\\imageprocessingservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|solutionrelative:services\\imageprocessingservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Owner\\AppData\\Local\\SourceServer\\403e7a2ea13d853d765ba986863bb1a817c3605d29e2a5e479b5def20928fe2b\\src\\OpenCvSharp\\Internal\\PInvoke\\NativeMethods\\NativeMethods.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|c:\\users\\owner\\desktop\\my_program\\kyo-pro\\80_autoplot\\autoplot\\utils\\opencvutils.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|solutionrelative:utils\\opencvutils.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|c:\\users\\owner\\desktop\\my_program\\kyo-pro\\80_autoplot\\autoplot\\autoplot.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|",
@@ -21,14 +38,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|c:\\users\\owner\\desktop\\my_program\\kyo-pro\\80_autoplot\\autoplot\\viewmodels\\curvedatacopydialogviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|solutionrelative:viewmodels\\curvedatacopydialogviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|c:\\users\\owner\\desktop\\my_program\\kyo-pro\\80_autoplot\\autoplot\\viewmodels\\mainviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|solutionrelative:viewmodels\\mainviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|c:\\users\\owner\\desktop\\my_program\\kyo-pro\\80_autoplot\\autoplot\\imageprocessing\\imageprocessor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|solutionrelative:imageprocessing\\imageprocessor.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{D4FAF39F-E7F2-43A9-921B-2A887B0B7BBE}|AutoPlot.csproj|c:\\users\\owner\\desktop\\my_program\\kyo-pro\\80_autoplot\\autoplot\\views\\curvedatacopydialog.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -46,7 +55,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Bookmark",
@@ -54,45 +63,44 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "ImageProcessingService.cs",
-              "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Services\\ImageProcessingService.cs",
-              "RelativeDocumentMoniker": "Services\\ImageProcessingService.cs",
-              "ToolTip": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Services\\ImageProcessingService.cs",
-              "RelativeToolTip": "Services\\ImageProcessingService.cs",
-              "ViewState": "AQIAAEAAAAAAAAAAAAAkwBUAAABHAAAA",
+              "DocumentIndex": 0,
+              "Title": "NativeMethods.cs",
+              "DocumentMoniker": "C:\\Users\\Owner\\AppData\\Local\\Temp\\.vsdbgsrc\\8efe05f549c68086a8d766f6f1090ba20512cd36b49565f42d10f3cdafefedf3\\NativeMethods.cs",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\AppData\\Local\\Temp\\.vsdbgsrc\\8efe05f549c68086a8d766f6f1090ba20512cd36b49565f42d10f3cdafefedf3\\NativeMethods.cs",
+              "ToolTip": "C:\\Users\\Owner\\AppData\\Local\\Temp\\.vsdbgsrc\\8efe05f549c68086a8d766f6f1090ba20512cd36b49565f42d10f3cdafefedf3\\NativeMethods.cs [\u8AAD\u307F\u53D6\u308A\u5C02\u7528]",
+              "RelativeToolTip": "..\\..\\..\\..\\..\\AppData\\Local\\Temp\\.vsdbgsrc\\8efe05f549c68086a8d766f6f1090ba20512cd36b49565f42d10f3cdafefedf3\\NativeMethods.cs [\u8AAD\u307F\u53D6\u308A\u5C02\u7528]",
+              "ViewState": "AQIAABYUAAAAAAAAAAAUwB4UAABVAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-01T13:07:53.18Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-02T04:26:51.238Z",
+              "EditorCaption": " [\u8AAD\u307F\u53D6\u308A\u5C02\u7528]"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 1,
               "Title": "ImageProcessor.cs",
               "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\ImageProcessing\\ImageProcessor.cs",
               "RelativeDocumentMoniker": "ImageProcessing\\ImageProcessor.cs",
               "ToolTip": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\ImageProcessing\\ImageProcessor.cs",
               "RelativeToolTip": "ImageProcessing\\ImageProcessor.cs",
-              "ViewState": "AQIAALgAAAAAAAAAAAApwFsAAAAAAAAA",
+              "ViewState": "AQIAAFMAAAAAAAAAAAAowFgAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-01-01T13:01:56.893Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 8,
               "Title": "MainView.xaml",
               "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Views\\MainView.xaml",
               "RelativeDocumentMoniker": "Views\\MainView.xaml",
               "ToolTip": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Views\\MainView.xaml",
               "RelativeToolTip": "Views\\MainView.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2026-01-02T00:47:57.941Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-02T00:47:57.941Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 9,
               "Title": "CurveDataCopyDialogViewModel.cs",
               "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\ViewModels\\CurveDataCopyDialogViewModel.cs",
               "RelativeDocumentMoniker": "ViewModels\\CurveDataCopyDialogViewModel.cs",
@@ -100,25 +108,75 @@
               "RelativeToolTip": "ViewModels\\CurveDataCopyDialogViewModel.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAgAAAAeAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-01T14:52:38.375Z",
+              "WhenOpened": "2026-01-01T14:52:38.375Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "MainViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\ViewModels\\MainViewModel.cs",
+              "RelativeDocumentMoniker": "ViewModels\\MainViewModel.cs",
+              "ToolTip": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\ViewModels\\MainViewModel.cs",
+              "RelativeToolTip": "ViewModels\\MainViewModel.cs",
+              "ViewState": "AQIAAPwAAAAAAAAAAAAowAUBAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-01T11:03:18.835Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 3,
+              "Title": "ImageProcessingService.cs",
+              "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Services\\ImageProcessingService.cs",
+              "RelativeDocumentMoniker": "Services\\ImageProcessingService.cs",
+              "ToolTip": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Services\\ImageProcessingService.cs",
+              "RelativeToolTip": "Services\\ImageProcessingService.cs",
+              "ViewState": "AQIAABEAAAAAAAAAAAAywBoAAAAPAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-01T13:07:53.18Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Microsoft.Common.CurrentVersion.targets",
+              "DocumentMoniker": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
+              "ToolTip": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
+              "RelativeToolTip": "..\\..\\..\\..\\..\\..\\..\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\amd64\\Microsoft.Common.CurrentVersion.targets",
+              "ViewState": "AQIAALsSAAAAAAAAAADgv8ESAAA2AAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003801|",
+              "WhenOpened": "2026-01-02T04:23:14.732Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "NativeMethods.cs",
+              "DocumentMoniker": "C:\\Users\\Owner\\AppData\\Local\\SourceServer\\403e7a2ea13d853d765ba986863bb1a817c3605d29e2a5e479b5def20928fe2b\\src\\OpenCvSharp\\Internal\\PInvoke\\NativeMethods\\NativeMethods.cs",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\AppData\\Local\\SourceServer\\403e7a2ea13d853d765ba986863bb1a817c3605d29e2a5e479b5def20928fe2b\\src\\OpenCvSharp\\Internal\\PInvoke\\NativeMethods\\NativeMethods.cs",
+              "ToolTip": "C:\\Users\\Owner\\AppData\\Local\\SourceServer\\403e7a2ea13d853d765ba986863bb1a817c3605d29e2a5e479b5def20928fe2b\\src\\OpenCvSharp\\Internal\\PInvoke\\NativeMethods\\NativeMethods.cs",
+              "RelativeToolTip": "..\\..\\..\\..\\..\\AppData\\Local\\SourceServer\\403e7a2ea13d853d765ba986863bb1a817c3605d29e2a5e479b5def20928fe2b\\src\\OpenCvSharp\\Internal\\PInvoke\\NativeMethods\\NativeMethods.cs",
+              "ViewState": "AQIAANwAAAAAAAAAAAAUwOIAAAA4AAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-01-02T04:18:55.793Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
               "Title": "OpenCvUtils.cs",
               "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Utils\\OpenCvUtils.cs",
               "RelativeDocumentMoniker": "Utils\\OpenCvUtils.cs",
               "ToolTip": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Utils\\OpenCvUtils.cs",
               "RelativeToolTip": "Utils\\OpenCvUtils.cs",
-              "ViewState": "AQIAAIoAAAAAAAAAAAAowJYAAAAnAAAA",
+              "ViewState": "AQIAAIoAAAAAAAAAAAAowJIAAAAvAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-01T14:12:49.626Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-01T14:12:49.626Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 7,
               "Title": "AutoPlot",
               "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\AutoPlot.csproj",
               "RelativeDocumentMoniker": "AutoPlot.csproj",
@@ -130,20 +188,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "MainViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\ViewModels\\MainViewModel.cs",
-              "RelativeDocumentMoniker": "ViewModels\\MainViewModel.cs",
-              "ToolTip": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\ViewModels\\MainViewModel.cs",
-              "RelativeToolTip": "ViewModels\\MainViewModel.cs",
-              "ViewState": "AQIAAKQBAAAAAAAAAAAkwKgBAAAJAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-01T11:03:18.835Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 10,
               "Title": "CurveDataCopyDialog.xaml.cs",
               "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\Views\\CurveDataCopyDialog.xaml.cs",
               "RelativeDocumentMoniker": "Views\\CurveDataCopyDialog.xaml.cs",
@@ -151,20 +196,18 @@
               "RelativeToolTip": "Views\\CurveDataCopyDialog.xaml.cs",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAAMAAAABAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-01-01T14:56:07.647Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-01T14:56:07.647Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 11,
               "Title": "App.xaml",
               "DocumentMoniker": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\App.xaml",
               "RelativeDocumentMoniker": "App.xaml",
               "ToolTip": "C:\\Users\\Owner\\Desktop\\my_program\\kyo-pro\\80_AutoPlot\\AutoPlot\\App.xaml",
               "RelativeToolTip": "App.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2026-01-02T00:52:48.512Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-01-02T00:52:48.512Z"
             }
           ]
         }
