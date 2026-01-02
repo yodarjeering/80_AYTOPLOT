@@ -114,7 +114,7 @@ namespace AutoPlot.Utils
             );
 
             int gridCount = 5;
-            var gridColor = new Scalar(220, 220, 220); // 薄いグレー
+            var gridColor = new Scalar(0, 0, 0); // 黒
 
             for (int i = 1; i < gridCount; i++)
             {
@@ -144,29 +144,25 @@ namespace AutoPlot.Utils
                     canvas,
                     text,
                     new Point(x, y),
-                    HersheyFonts.HersheySimplex,
-                    0.4,
-                    new Scalar(0, 0, 0),
-                    1
-                );
-            }
+                    HersheyFonts.HersheyDuplex,
+                    0.45,
+                    new Scalar(60, 60, 60),
+                    1,
+                    LineTypes.AntiAlias
+                    );
 
-            string FormatValue(double v, bool isLog)
-            {
-                return isLog
-                    ? $"10^{Math.Log10(v):0.#}"
-                    : v.ToString("G4");
             }
 
             // X軸ラベル
-            DrawLabel(FormatValue(xMin, isXLog), 5, height - 5);
-            DrawLabel(FormatValue((xMin + xMax) / 2, isXLog), width / 2 - 20, height - 5);
-            DrawLabel(FormatValue(xMax, isXLog), width - 60, height - 5);
+            DrawLabel(xMin.ToString("G4"), 5, height - 5);
+            DrawLabel(((xMin + xMax) / 2).ToString("G4"), width / 2 - 20, height - 5);
+            DrawLabel(xMax.ToString("G4"), width - 60, height - 5);
 
             // Y軸ラベル
-            DrawLabel(FormatValue(yMin, isYLog), 5, height - 20);
-            DrawLabel(FormatValue((yMin + yMax) / 2, isYLog), 5, height / 2);
-            DrawLabel(FormatValue(yMax, isYLog), 5, 15);
+            DrawLabel(yMin.ToString("G4"), 5, height - 20);
+            DrawLabel(((yMin + yMax) / 2).ToString("G4"), 5, height / 2);
+            DrawLabel(yMax.ToString("G4"), 5, 15);
+
 
             return canvas;
         }

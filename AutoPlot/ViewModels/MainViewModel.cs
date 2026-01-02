@@ -268,18 +268,6 @@ namespace AutoPlot.ViewModels
                 _axisSettings.IsYLog ? "log" : "linear"
             );
 
-            // TBD
-            // var sb = new StringBuilder();
-
-            // int showCount = Math.Min(100, CurveData.Points.Count);
-            // for (int i = 0; i < showCount; i++)
-            // {
-            //     sb.AppendLine($"[{i}] X={CurveData.Points[i].X}, Y={CurveData.Points[i].Y}");
-            // }
-
-            // // TBD
-            // Debug.WriteLine(sb.ToString());
-
             
             _displayState = DisplayState.AxisCalibrated;
 
@@ -409,8 +397,7 @@ namespace AutoPlot.ViewModels
 
             foreach (var p in data.Points)
             {
-                // TBD ここをスペースでなく 「,」区切りにする？
-                sb.AppendLine($"{p.X:G6}\t{p.Y:G6}");
+                sb.AppendLine($"{p.X,14:F6}\t{p.Y,14:F6}");
             }
 
             return sb.ToString();
@@ -434,6 +421,27 @@ namespace AutoPlot.ViewModels
             dialog.ShowDialog();
         }
 
+        public async void LoadImageFromClipboard(BitmapSource bitmap)
+        {
+            if (bitmap == null)
+                return;
+
+            // 表示更新
+            _originalBitmap = bitmap;
+            InputBitmap = _originalBitmap;
+
+            // 解析用に Mat 化（必要なら）
+            using var mat = BitmapSourceConverter.ToMat(bitmap);
+
+            _displayState = DisplayState.Original;
+            Mat inputImage = OpenCvUtils.BitmapImageToMat(InputBitmap);
+            
+            _roi = await Task.Run(() =>
+                _service.RunRoi(inputImage));
+
+            _workingImage?.Dispose();
+            _workingImage = inputImage.Clone();
+        }
 
 
     }

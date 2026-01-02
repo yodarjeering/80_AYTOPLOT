@@ -8,7 +8,9 @@
     xmlns:vm="clr-namespace:AutoPlot.ViewModels"
     mc:Ignorable="d"
     Title="AutoPlot"
-    Height="500" Width="1000">
+    Height="400" Width="700"
+    KeyDown="Window_KeyDown"
+    Focusable="True">
 
     <Window.DataContext>
         <vm:MainViewModel />
@@ -17,7 +19,7 @@
     <Grid>
 
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="180"/>
+            <ColumnDefinition Width="120"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
@@ -25,33 +27,34 @@
         <ScrollViewer Grid.Column="0"
                       VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="10">
-                <TextBlock Text="機能メニュー" FontWeight="Bold" FontSize="18" Margin="0,0,0,10"/>
+                <TextBlock Text="Menu" FontWeight="Bold" FontSize="15" Margin="0,0,0,10"/>
 
-                <Button Content="画像パス入力"
+                <!-- TBD 画像をパスで入力する機能はいったん置く -->
+                <!-- <Button Content="画像パス入力"
                         Style="{StaticResource MainMenuButtonStyle}"
-                        Click="OnShowPathInputDialog" />
+                        Click="OnShowPathInputDialog" /> -->
 
-                <Button Content="軸キャリブレーション"
+                <Button Content="Settings"
                         Style="{StaticResource MainMenuButtonStyle}" 
                         Command="{Binding AxisCalibrationCommand}" />
 
-                <Button Content="ノイズ除去"
+                <Button Content="Noise removal"
                         Style="{StaticResource MainMenuButtonStyle}"
                         Command="{Binding NoiseRemovalCommand}" />
 
-                <Button Content="ノイズ除去完了"
+                <Button Content="Complete removal"
                         Style="{StaticResource MainMenuButtonStyle}"
                         Command="{Binding NoiseRemovalCompleteCommand}" />
                         
-                <Button Content="抽出画像表示"
+                <Button Content="Show graph"
                         Style="{StaticResource MainMenuButtonStyle}" 
                         Command="{Binding OnShowUpdateGraphCommand}" /> 
 
-                <Button Content="原図表示"
+                <Button Content="Show original"
                         Style="{StaticResource MainMenuButtonStyle}" 
                         Command="{Binding ShowOriginalImageCommand}" />
                 
-                <Button Content="データコピー"
+                <Button Content="Copy data"
                         Command="{Binding CopyCurveDataCommand}"
                         Style="{StaticResource MainMenuButtonStyle}" />
 
@@ -75,8 +78,10 @@
                 <Border Grid.Column="0"
                         BorderBrush="Gray"
                         BorderThickness="1"
-                        Margin="0,0,5,0">
+                        Margin="0,0,5,0"
+                        Background="White">
                     <Grid>
+                        <!-- 初期表示用テキスト -->
                         <Image x:Name="InputImageDisplay"
                                Stretch="Uniform"
                                Source="{Binding InputBitmap}" />
@@ -91,10 +96,15 @@
                 <!-- プロット -->
                 <Border Grid.Column="1"
                         BorderBrush="Gray"
-                        BorderThickness="1">
-                    <Image x:Name="GraphDisplay"
-                           Stretch="Uniform"
-                           Source="{Binding GraphBitmap}" />
+                        BorderThickness="1"
+                        Background="White">
+
+                    <Grid>
+                        <!-- グラフ画像 -->
+                        <Image x:Name="GraphDisplay"
+                            Stretch="Uniform"
+                            Source="{Binding GraphBitmap}" />
+                    </Grid>
                 </Border>
 
             </Grid>
