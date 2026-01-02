@@ -123,7 +123,24 @@ namespace AutoPlot.Views
             }
 
         }
+    
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.V && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            {
+                if (Clipboard.ContainsImage())
+                {
+                    var bmp = Clipboard.GetImage();
 
+                    if (DataContext is MainViewModel vm)
+                    {
+                        vm.LoadImageFromClipboard(bmp);
+                    }
+
+                    e.Handled = true;
+                }
+            }
+        }
 
     }
 }
