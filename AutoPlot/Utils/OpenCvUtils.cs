@@ -154,14 +154,23 @@ namespace AutoPlot.Utils
             }
 
             // X軸ラベル
+            double xMid = isXLog
+                ? Math.Sqrt(xMin * xMax)
+                : (xMin + xMax) / 2;
+
             DrawLabel(xMin.ToString("G4"), 5, height - 5);
-            DrawLabel(((xMin + xMax) / 2).ToString("G4"), width / 2 - 20, height - 5);
+            DrawLabel(xMid.ToString("G4"), width / 2 - 20, height - 5);
             DrawLabel(xMax.ToString("G4"), width - 60, height - 5);
 
             // Y軸ラベル
+            double yMid = isYLog
+                ? Math.Sqrt(yMin * yMax)
+                : (yMin + yMax) / 2;
+
             DrawLabel(yMin.ToString("G4"), 5, height - 20);
-            DrawLabel(((yMin + yMax) / 2).ToString("G4"), 5, height / 2);
+            DrawLabel(yMid.ToString("G4"), 5, height / 2);
             DrawLabel(yMax.ToString("G4"), 5, 15);
+
 
 
             return canvas;
