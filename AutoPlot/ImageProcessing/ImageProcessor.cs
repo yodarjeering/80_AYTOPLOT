@@ -91,7 +91,20 @@ namespace AutoPlot.ImageProcessing
                 Mat grayMask = new();
 
                 Cv2.CvtColor(plotAreaForAnalysis, grayMask, ColorConversionCodes.BGR2GRAY);
-                bwNoGrid.SetTo(0, grayMask);
+
+                Mat grayMaskBinary = new();
+                Cv2.Threshold(
+                    grayMask,
+                    grayMaskBinary,
+                    200,   // ← ここが命（180〜220で調整）
+                    255,
+                    ThresholdTypes.Binary
+                );
+
+
+                bwNoGrid.SetTo(0, grayMaskBinary);
+
+
             }
 
             // === 連結成分解析 ===
@@ -106,6 +119,7 @@ namespace AutoPlot.ImageProcessing
             Mat clean = Mat.Zeros(bwNoGrid.Size(), MatType.CV_8UC1);
 
 
+            // int minArea = 10;
             int minArea = 10;
 
             for (int i = 1; i < numLabels; i++)
