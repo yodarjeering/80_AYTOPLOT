@@ -39,6 +39,7 @@ namespace AutoPlot.ViewModels
         private OpenCvSharp.Rect _roi;
         private Mat _plotArea;
         private Mat _workingImage; //　キャリブレーション＆ノイズ除去の基準画像
+        private Mat _originalPlotArea; // ノイズ除去前の plotArea を保持（ノイズ除去のやり直し用）
         public double CanvasWidth  { get; set; }
         public double CanvasHeight { get; set; }
         private BitmapSource _graphBitmap;
@@ -77,6 +78,7 @@ namespace AutoPlot.ViewModels
         public IRelayCommand NoiseRemovalCompleteCommand { get; }
         public IRelayCommand OnShowUpdateGraphCommand { get; }
         public IRelayCommand CopyCurveDataCommand { get; }
+        public IRelayCommand ShowNoiseRemovalWindowCommand { get; } // <- 14 追加
 
 
         public MainViewModel()
@@ -85,8 +87,8 @@ namespace AutoPlot.ViewModels
             AxisCalibrationCommand = new RelayCommand(OnAxisCalibration);
             ShowOriginalImageCommand = new RelayCommand(OnShowOriginalImage);
             NoiseRemovalCommand = new RelayCommand(OnNoiseRemoval);
-            NoiseRemovalCompleteCommand = new RelayCommand(OnNoiseRemovalComplete);
-            OnShowUpdateGraphCommand = new RelayCommand(OnShowUpdateGraph); //←追加
+            ShowNoiseRemovalWindowCommand = new RelayCommand(OnShowNoiseRemovalWindow); // <- 14追加
+            OnShowUpdateGraphCommand = new RelayCommand(OnShowUpdateGraph); 
             CopyCurveDataCommand = new RelayCommand(OnCopyCurveData);
 
         }
@@ -166,6 +168,7 @@ namespace AutoPlot.ViewModels
 
             _plotArea?.Dispose();
             _plotArea = new Mat(_workingImage, _roi).Clone();
+            _originalPlotArea = _plotArea.Clone(); // キャリブレーション後の plotArea を保存
 
             var data = _service.RunPlotArea(
                 _plotArea,
@@ -233,48 +236,6 @@ namespace AutoPlot.ViewModels
             );
 
             UpdateNoiseOverlay();
-        }
-
-        private void OnNoiseRemovalComplete()
-        {
-            if (_plotArea == null || _workingImage == null || _noiseMask == null)
-                return;
-
-            // ① plotArea にノイズ反映（ここで初めて確定）
-            Mat plotAreaForGrid = _plotArea.Clone();   // ← ノイズマスク未適用
-            _plotArea = _service.ApplyNoiseMask(_plotArea, _noiseMask);
-            Mat plotAreaForAnalysis = _plotArea;       // ← ノイズマスク済み
-
-            // ② workingImage に貼り戻す
-            using var updated = _workingImage.Clone();
-            using var roiMat = new Mat(updated, _roi);
-            _plotArea.CopyTo(roiMat);
-
-            _workingImage.Dispose();
-            _workingImage = updated.Clone();
-
-            // ③ 表示更新（workingImage を見る）
-            InputBitmap = BitmapSourceConverter.ToBitmapSource(_workingImage);
-
-            // ④ ここで初めてマスクを破棄
-            _noiseMask.Dispose();
-            _noiseMask = null;
-
-            // ★ ここで plotArea を元に再処理
-            CurveData = _service.RunPlotArea(
-                plotAreaForGrid,
-                plotAreaForAnalysis,
-                _roi,
-                _workingImage.Size(),
-                _axisSettings.XMin, _axisSettings.XMax,
-                _axisSettings.YMin, _axisSettings.YMax,
-                _axisSettings.IsXLog ? "log" : "linear",
-                _axisSettings.IsYLog ? "log" : "linear"
-            );
-
-            
-            _displayState = DisplayState.AxisCalibrated;
-
         }
 
         // =========================================================
@@ -375,6 +336,41 @@ namespace AutoPlot.ViewModels
             _displayState = DisplayState.GraphPlot;
             UpdateDisplayWithOverlay(CurveData);
         }
+
+        // 14追加
+        private void OnShowNoiseRemovalWindow()
+        {
+            if (_plotArea == null || _workingImage == null)
+            {
+                MessageBox.Show("先に画像読込と軸設定を完了してください。");
+                return;
+            }
+
+            var vm = new NoiseRemovalViewModel(_plotArea,_originalPlotArea);
+
+            var window = new NoiseRemovalWindow
+            {
+                DataContext = vm,
+                Owner = Application.Current.MainWindow,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+
+            bool? result = window.ShowDialog();
+            if (result != true || !vm.IsConfirmed || vm.ResultPlotArea == null)
+                return;
+
+            _plotArea.Dispose();
+            _plotArea = vm.ResultPlotArea.Clone();
+
+            using var updated = _workingImage.Clone();
+            using var roiMat = new Mat(updated, _roi);
+        _plotArea.CopyTo(roiMat);
+
+        _workingImage.Dispose();
+        _workingImage = updated.Clone();
+
+        InputBitmap = BitmapSourceConverter.ToBitmapSource(_workingImage);
+    }
 
         private void OnShowExtractedGraph(CurveData data)
         {
