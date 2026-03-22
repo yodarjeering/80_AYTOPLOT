@@ -1,4 +1,5 @@
 using System;
+using System.Windows;
 
 namespace AutoPlot.ImageProcessing.Helpers
 {
@@ -29,7 +30,20 @@ namespace AutoPlot.ImageProcessing.Helpers
                 if (scale == "log")
                 {
                     if (vMin <= 0 || vMax <= 0)
-                        throw new ArgumentException("log scale requires vMin > 0 and vMax > 0");
+                    {
+                        //throw new ArgumentException("log scale requires vMin > 0 and vMax > 0");
+                        MessageBox.Show(
+                            "Logスケールでは最小値・最大値に 0 以下は指定できません。\n" +
+                            "min / max を正の値に設定してください。",
+                            "Logスケール設定エラー",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning
+                        );
+                        // 全要素を NaN にして返す
+                        for (int j = 0; j < n; j++)
+                            result[i] = double.NaN;
+                        return result;
+                    }
 
                     double logV = Math.Log10(vMin) + t * (Math.Log10(vMax) - Math.Log10(vMin));
                     result[i] = Math.Pow(10, logV);
