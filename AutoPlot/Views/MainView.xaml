@@ -37,15 +37,18 @@
                 <Button Content="Settings"
                         Style="{StaticResource MainMenuButtonStyle}" 
                         Command="{Binding AxisCalibrationCommand}" />
-
+<!-- 
                 <Button Content="Noise removal"
                         Style="{StaticResource MainMenuButtonStyle}"
-                        Command="{Binding NoiseRemovalCommand}" />
+                        Command="{Binding NoiseRemovalCommand}" /> -->
 
-                <Button Content="Complete removal"
+                <!-- <Button Content="Complete removal"
                         Style="{StaticResource MainMenuButtonStyle}"
-                        Command="{Binding NoiseRemovalCompleteCommand}" />
-                        
+                        Command="{Binding NoiseRemovalCompleteCommand}" /> -->
+                <Button Content="Noise removal"
+                        Style="{StaticResource MainMenuButtonStyle}"
+                        Command="{Binding ShowNoiseRemovalWindowCommand}" />        
+                
                 <Button Content="Show graph"
                         Style="{StaticResource MainMenuButtonStyle}" 
                         Command="{Binding OnShowUpdateGraphCommand}" /> 

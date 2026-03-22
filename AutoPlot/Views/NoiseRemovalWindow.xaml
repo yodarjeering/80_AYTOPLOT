@@ -1,0 +1,88 @@
+<Window x:Class="AutoPlot.Views.NoiseRemovalWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Noise Removal"
+        Width="1000"
+        Height="700"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 上部: 操作ボタン -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,10" LastChildFill="False">
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+            <Button Width="44"
+                    Height="36"
+                    Margin="0,0,8,0"
+                    ToolTip="Undo"
+                    Command="{Binding UndoCommand}">
+                <TextBlock Text="⟲"
+                        FontSize="18"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"/>
+            </Button>
+
+            <Button Width="44"
+                    Height="36"
+                    Margin="0,0,8,0"
+                    ToolTip="Redo"
+                    Command="{Binding RedoCommand}">
+                <TextBlock Text="⟳"
+                        FontSize="18"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"/>
+            </Button>
+            <Button Content="Reset"
+                    Width="70"
+                    Height="36"
+                    Margin="0,0,8,0"
+                    ToolTip="元の画像に戻す"
+                    Command="{Binding ResetCommand}"/>
+        </StackPanel>
+        </DockPanel>
+
+        <!-- 中央: グラフ描画エリア -->
+        <Border Grid.Row="1"
+                BorderBrush="Gray"
+                BorderThickness="1"
+                Background="White"
+                CornerRadius="4">
+            <Grid>
+                <!-- あとで Image / Canvas / Plot コントロールを置く想定 -->
+                <Image x:Name="PreviewImageControl"
+                        Source="{Binding PreviewImage}"
+                        Stretch="Uniform"
+                        MouseLeftButtonDown="PreviewImageControl_MouseLeftButtonDown"
+                        MouseMove="PreviewImageControl_MouseMove"
+                        MouseLeftButtonUp="PreviewImageControl_MouseLeftButtonUp"/>
+                <!-- <TextBlock Text="ここにグラフやマスク結果を表示"
+                           Foreground="Gray"
+                           FontSize="20"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/> -->
+            </Grid>
+        </Border>
+
+        <!-- 下部: OK / Cancel -->
+        <DockPanel Grid.Row="2" Margin="0,10,0,0" LastChildFill="False">
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        DockPanel.Dock="Right">
+                <Button Content="OK"
+                        Width="100"
+                        Height="32"
+                        Margin="0,0,10,0"
+                        Click="OnOkClicked"/>
+                <Button Content="Cancel"
+                        Width="100"
+                        Height="32"
+                        Click="OnCancelClicked"/>
+            </StackPanel>
+        </DockPanel>
+    </Grid>
+</Window>
