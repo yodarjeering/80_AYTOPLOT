@@ -359,17 +359,33 @@ namespace AutoPlot.ViewModels
             if (result != true || !vm.IsConfirmed || vm.ResultPlotArea == null)
                 return;
 
+            // 旧 OnNoiseRemovalComplete の役割をここで引き継ぐ
+            Mat plotAreaForGrid = _plotArea.Clone();   // マスク適用前
             _plotArea.Dispose();
-            _plotArea = vm.ResultPlotArea.Clone();
+            _plotArea = vm.ResultPlotArea.Clone();     // マスク適用後
+            Mat plotAreaForAnalysis = _plotArea.Clone();
 
             using var updated = _workingImage.Clone();
             using var roiMat = new Mat(updated, _roi);
-        _plotArea.CopyTo(roiMat);
+            _plotArea.CopyTo(roiMat);
 
-        _workingImage.Dispose();
-        _workingImage = updated.Clone();
+            _workingImage.Dispose();
+            _workingImage = updated.Clone();
 
-        InputBitmap = BitmapSourceConverter.ToBitmapSource(_workingImage);
+            InputBitmap = BitmapSourceConverter.ToBitmapSource(_workingImage);
+
+            CurveData = _service.RunPlotArea(
+                plotAreaForGrid,
+                plotAreaForAnalysis,
+                _roi,
+                _workingImage.Size(),
+                _axisSettings.XMin, _axisSettings.XMax,
+                _axisSettings.YMin, _axisSettings.YMax,
+                _axisSettings.IsXLog ? "log" : "linear",
+                _axisSettings.IsYLog ? "log" : "linear"
+            );
+
+            _displayState = DisplayState.AxisCalibrated;
     }
 
         private void OnShowExtractedGraph(CurveData data)
