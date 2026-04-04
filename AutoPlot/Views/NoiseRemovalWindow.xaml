@@ -2,8 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Noise Removal"
-        Width="1000"
-        Height="700"
+        Width="700"
+        Height="500"
         WindowStartupLocation="CenterOwner">
 
     <Grid Margin="10">
