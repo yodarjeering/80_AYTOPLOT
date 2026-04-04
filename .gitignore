@@ -10,3 +10,7 @@ AutoPlot/.vs/
 AutoPlot/.vs/
 >>>>>>> origin/main
 .vs/
+obj/
+bin/
+*.user
+*.suo
