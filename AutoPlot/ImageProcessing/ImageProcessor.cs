@@ -115,11 +115,7 @@ namespace AutoPlot.ImageProcessing
             int numLabels = Cv2.ConnectedComponentsWithStats(
                 bwNoGrid, labels, stats, centroids,
                 PixelConnectivity.Connectivity8);
-
             Mat clean = Mat.Zeros(bwNoGrid.Size(), MatType.CV_8UC1);
-
-
-            // int minArea = 10;
             int minArea = 10;
 
             for (int i = 1; i < numLabels; i++)
@@ -134,9 +130,9 @@ namespace AutoPlot.ImageProcessing
             }
 
             // ==== TBD debug用 ====
-            // Cv2.ImShow("debug clean", clean);
-            // Cv2.WaitKey(0);   // キー押すまで止まる
-            // Cv2.DestroyAllWindows();
+            Cv2.ImShow("debug clean", clean);
+            Cv2.WaitKey(0);   // キー押すまで止まる
+            Cv2.DestroyAllWindows();
             // =====
 
             Mat kernel = Cv2.GetStructuringElement(
