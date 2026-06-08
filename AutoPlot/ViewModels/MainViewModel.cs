@@ -24,6 +24,9 @@ namespace AutoPlot.ViewModels
         [ObservableProperty] private string _imagePath = "";
         [ObservableProperty] private string _resultText = "";
         [ObservableProperty] private CurveData _curveData;
+        [ObservableProperty] private int seriesCount = 1;
+        [ObservableProperty] private int currentSeriesIndex = 0;
+        [ObservableProperty] private bool isSeriesTraceMode = false;
 
         // ===== Image =====
         private BitmapSource _inputBitmap;
@@ -458,7 +461,21 @@ namespace AutoPlot.ViewModels
             _workingImage?.Dispose();
             _workingImage = inputImage.Clone();
         }
+        [RelayCommand]
+        private void StartSeriesTrace()
+        {
+            if (SeriesCount <= 0)
+            {
+                MessageBox.Show("系列数は1以上を入力してください。");
+                return;
+            }
 
+
+            CurrentSeriesIndex = 0;
+            IsSeriesTraceMode = true;
+
+            MessageBox.Show($"系列1をなぞってください。");
+        }
 
     }
 }

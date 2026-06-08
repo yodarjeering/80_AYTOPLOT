@@ -8,7 +8,7 @@
     xmlns:vm="clr-namespace:AutoPlot.ViewModels"
     mc:Ignorable="d"
     Title="AutoPlot"
-    Height="400" Width="700"
+    Height="600" Width="1150"
     KeyDown="Window_KeyDown"
     Focusable="True">
 
@@ -38,6 +38,15 @@
                 <Button Content="Settings"
                         Style="{StaticResource MainMenuButtonStyle}" 
                         Command="{Binding AxisCalibrationCommand}" />
+
+                <!-- <TextBox
+                    Width="80"
+                    Text="{Binding SeriesCount, UpdateSourceTrigger=PropertyChanged}" /> -->
+<!-- 2026年6月8日　ボタン追加しただけでなんもしていない -->
+                <Button
+                    Content="Input series count"
+                    Style="{StaticResource MainMenuButtonStyle}"
+                    Command="{Binding StartSeriesTraceCommand}"/>
 <!-- 
                 <Button Content="Noise removal"
                         Style="{StaticResource MainMenuButtonStyle}"
