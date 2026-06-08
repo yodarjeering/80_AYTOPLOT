@@ -10,3 +10,4 @@ AutoPlot/.vs/
 AutoPlot/.vs/
 >>>>>>> origin/main
 .vs/*.pth
+*.pth
