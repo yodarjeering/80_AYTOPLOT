@@ -29,6 +29,7 @@
             <StackPanel Margin="10">
                 <TextBlock Text="Menu" FontWeight="Bold" FontSize="15" Margin="0,0,0,10"/>
 
+
                 <!-- TBD 画像をパスで入力する機能はいったん置く -->
                 <!-- <Button Content="画像パス入力"
                         Style="{StaticResource MainMenuButtonStyle}"
