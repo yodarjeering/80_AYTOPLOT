@@ -62,8 +62,9 @@
                         Command="{Binding CopyCurveDataCommand}"
                         Style="{StaticResource MainMenuButtonStyle}" />
 
-
-                
+                <Button Content="Input series count"
+                        Style="{StaticResource MainMenuButtonStyle}"
+                        Command="{Binding StartSeriesTraceCommand}" />
 
             </StackPanel>
         </ScrollViewer>
