@@ -24,9 +24,10 @@ namespace AutoPlot.ViewModels
         [ObservableProperty] private string _imagePath = "";
         [ObservableProperty] private string _resultText = "";
         [ObservableProperty] private CurveData _curveData;
-        [ObservableProperty] private int seriesCount = 1;
-        [ObservableProperty] private int currentSeriesIndex = 0;
-        [ObservableProperty] private bool isSeriesTraceMode = false;
+
+        [ObservableProperty] private int _seriesCount = 1;
+        [ObservableProperty] private int _currentSeriesIndex = 0;
+        [ObservableProperty] private bool _isSeriesTraceMode = false;
 
         // ===== Image =====
         private BitmapSource _inputBitmap;
@@ -81,6 +82,7 @@ namespace AutoPlot.ViewModels
         public IRelayCommand NoiseRemovalCompleteCommand { get; }
         public IRelayCommand OnShowUpdateGraphCommand { get; }
         public IRelayCommand CopyCurveDataCommand { get; }
+        //public IRelayCommand StartSeriesTraceCommand { get; }
         public IRelayCommand ShowNoiseRemovalWindowCommand { get; } // <- 14 追加
 
 
@@ -93,6 +95,7 @@ namespace AutoPlot.ViewModels
             ShowNoiseRemovalWindowCommand = new RelayCommand(OnShowNoiseRemovalWindow); // <- 14追加
             OnShowUpdateGraphCommand = new RelayCommand(OnShowUpdateGraph); 
             CopyCurveDataCommand = new RelayCommand(OnCopyCurveData);
+            //StartSeriesTraceCommand = new RelayCommand(OnStartSeriesTrace);
 
         }
 
@@ -421,7 +424,28 @@ namespace AutoPlot.ViewModels
 
             return sb.ToString();
         }
-        
+
+
+        //private void OnStartSeriesTrace()
+        //{
+        //    var vm = new SeriesCountDialogViewModel
+        //    {
+        //        SeriesCount = SeriesCount
+        //    };
+
+        //    var dialog = new SeriesCountDialog
+        //    {
+        //        DataContext = vm,
+        //        Owner = Application.Current.MainWindow,
+        //        WindowStartupLocation = WindowStartupLocation.CenterOwner
+        //    };
+
+        //    if (dialog.ShowDialog() != true)
+        //        return;
+
+        //    SeriesCount = vm.SeriesCount;
+        //    ResultText = $"系列数: {SeriesCount}";
+        //}
         private void OnCopyCurveData()
         {
             if (CurveData == null)
