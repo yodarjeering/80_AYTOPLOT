@@ -82,6 +82,7 @@ namespace AutoPlot.ViewModels
         public IRelayCommand OnShowUpdateGraphCommand { get; }
         public IRelayCommand CopyCurveDataCommand { get; }
         public IRelayCommand ShowNoiseRemovalWindowCommand { get; } // <- 14 追加
+        public IRelayCommand ShowSeriesTraceWindowCommand { get; }
 
 
         public MainViewModel()
@@ -91,6 +92,7 @@ namespace AutoPlot.ViewModels
             ShowOriginalImageCommand = new RelayCommand(OnShowOriginalImage);
             NoiseRemovalCommand = new RelayCommand(OnNoiseRemoval);
             ShowNoiseRemovalWindowCommand = new RelayCommand(OnShowNoiseRemovalWindow); // <- 14追加
+            ShowSeriesTraceWindowCommand = new RelayCommand(OnShowSeriesTraceWindow);
             OnShowUpdateGraphCommand = new RelayCommand(OnShowUpdateGraph); 
             CopyCurveDataCommand = new RelayCommand(OnCopyCurveData);
 
@@ -340,6 +342,26 @@ namespace AutoPlot.ViewModels
             UpdateDisplayWithOverlay(CurveData);
         }
 
+        private void OnShowSeriesTraceWindow()
+        {
+            if (_plotArea == null)
+            {
+                MessageBox.Show("先に画像読込と軸設定を完了してください。");
+                return;
+            }
+
+            var vm = new SeriesTraceViewModel(BitmapSourceConverter.ToBitmapSource(_plotArea));
+
+            var window = new SeriesTraceWindow
+            {
+                DataContext = vm,
+                Owner = Application.Current.MainWindow,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+
+            window.ShowDialog();
+        }
+
         // 14追加
         private void OnShowNoiseRemovalWindow()
         {
@@ -461,22 +483,6 @@ namespace AutoPlot.ViewModels
             _workingImage?.Dispose();
             _workingImage = inputImage.Clone();
         }
-        [RelayCommand]
-        private void StartSeriesTrace()
-        {
-            if (SeriesCount <= 0)
-            {
-                MessageBox.Show("系列数は1以上を入力してください。");
-                return;
-            }
-
-
-            CurrentSeriesIndex = 0;
-            IsSeriesTraceMode = true;
-
-            MessageBox.Show($"系列1をなぞってください。");
-        }
-
     }
 }
 
