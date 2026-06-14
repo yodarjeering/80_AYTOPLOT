@@ -2,6 +2,7 @@ using AutoPlot.Models;
 using AutoPlot.Services;
 using AutoPlot.Utils;
 using AutoPlot.Views;
+using AutoPlot.ImageProcessing.Helpers;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using OpenCvSharp;
@@ -46,6 +47,7 @@ namespace AutoPlot.ViewModels
         public double CanvasWidth  { get; set; }
         public double CanvasHeight { get; set; }
         private BitmapSource _graphBitmap;
+        private List<List<ImagePoint>> _tracedSeries = new();
         
         public BitmapSource GraphBitmap
         {
@@ -82,6 +84,7 @@ namespace AutoPlot.ViewModels
         public IRelayCommand OnShowUpdateGraphCommand { get; }
         public IRelayCommand CopyCurveDataCommand { get; }
         public IRelayCommand ShowNoiseRemovalWindowCommand { get; } // <- 14 追加
+        public IRelayCommand ShowSeriesTraceWindowCommand { get; }
 
 
         public MainViewModel()
@@ -91,6 +94,7 @@ namespace AutoPlot.ViewModels
             ShowOriginalImageCommand = new RelayCommand(OnShowOriginalImage);
             NoiseRemovalCommand = new RelayCommand(OnNoiseRemoval);
             ShowNoiseRemovalWindowCommand = new RelayCommand(OnShowNoiseRemovalWindow); // <- 14追加
+            ShowSeriesTraceWindowCommand = new RelayCommand(OnShowSeriesTraceWindow);
             OnShowUpdateGraphCommand = new RelayCommand(OnShowUpdateGraph); 
             CopyCurveDataCommand = new RelayCommand(OnCopyCurveData);
 
@@ -105,6 +109,7 @@ namespace AutoPlot.ViewModels
                 return;
 
             ResultText = "処理中…";
+            _tracedSeries.Clear();
             _originalBitmap = OpenCvUtils.LoadBitmap(ImagePath);
             InputBitmap = _originalBitmap;
             _displayState = DisplayState.Original;
@@ -168,6 +173,7 @@ namespace AutoPlot.ViewModels
             _axisSettings.YMin = vm.YMin;
             _axisSettings.YMax = vm.YMax;
             _axisSettings.IsYLog = vm.IsYLog;
+            _tracedSeries.Clear();
 
             _plotArea?.Dispose();
             _plotArea = new Mat(_workingImage, _roi).Clone();
@@ -340,6 +346,31 @@ namespace AutoPlot.ViewModels
             UpdateDisplayWithOverlay(CurveData);
         }
 
+        private void OnShowSeriesTraceWindow()
+        {
+            if (_plotArea == null)
+            {
+                MessageBox.Show("先に画像読込と軸設定を完了してください。");
+                return;
+            }
+
+            var vm = new SeriesTraceViewModel(BitmapSourceConverter.ToBitmapSource(_plotArea));
+
+            var window = new SeriesTraceWindow
+            {
+                DataContext = vm,
+                Owner = Application.Current.MainWindow,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+
+            bool? result = window.ShowDialog();
+            if (result == true && vm.IsConfirmed)
+            {
+                _tracedSeries = ConvertTracedSeriesToRealPoints(vm.ResultSeries, vm.PlotImage.PixelWidth, vm.PlotImage.PixelHeight);
+                ResultText = $"{_tracedSeries.Count} series traced";
+            }
+        }
+
         // 14追加
         private void OnShowNoiseRemovalWindow()
         {
@@ -393,22 +424,35 @@ namespace AutoPlot.ViewModels
 
         private void OnShowExtractedGraph(CurveData data)
         {
-            var mat = OpenCvUtils.RenderGraphFromCurveData(
-                data,
-                600, 400,
-                _axisSettings.XMin,
-                _axisSettings.XMax,
-                _axisSettings.YMin,
-                _axisSettings.YMax,
-                _axisSettings.IsXLog,
-                _axisSettings.IsYLog
-            );
+            var mat = _tracedSeries.Count > 0
+                ? OpenCvUtils.RenderGraphFromSeries(
+                    _tracedSeries,
+                    600, 400,
+                    _axisSettings.XMin,
+                    _axisSettings.XMax,
+                    _axisSettings.YMin,
+                    _axisSettings.YMax,
+                    _axisSettings.IsXLog,
+                    _axisSettings.IsYLog)
+                : OpenCvUtils.RenderGraphFromCurveData(
+                    data,
+                    600, 400,
+                    _axisSettings.XMin,
+                    _axisSettings.XMax,
+                    _axisSettings.YMin,
+                    _axisSettings.YMax,
+                    _axisSettings.IsXLog,
+                    _axisSettings.IsYLog
+                );
 
             GraphBitmap = BitmapSourceConverter.ToBitmapSource(mat);
         }
 
         private string BuildCurveDataText(CurveData data)
         {
+            if (_tracedSeries.Count > 0)
+                return BuildTracedSeriesText(_tracedSeries);
+
             if (data?.Points == null || data.Points.Count == 0)
                 return string.Empty;
 
@@ -420,6 +464,105 @@ namespace AutoPlot.ViewModels
             }
 
             return sb.ToString();
+        }
+
+        private List<List<ImagePoint>> ConvertTracedSeriesToRealPoints(
+            List<List<System.Windows.Point>> tracedSeries,
+            int imageWidth,
+            int imageHeight)
+        {
+            var result = new List<List<ImagePoint>>();
+
+            foreach (var series in tracedSeries)
+            {
+                double[] xPx = series.Select(p => p.X).ToArray();
+                double[] yPx = series.Select(p => p.Y).ToArray();
+
+                double[] xReal = PixelConverter.PxToReal(
+                    xPx, 0, imageWidth,
+                    _axisSettings.XMin, _axisSettings.XMax,
+                    _axisSettings.IsXLog ? "log" : "linear");
+
+                double[] yReal = PixelConverter.PxToReal(
+                    yPx, 0, imageHeight,
+                    _axisSettings.YMin, _axisSettings.YMax,
+                    _axisSettings.IsYLog ? "log" : "linear",
+                    true);
+
+                var realSeries = new List<ImagePoint>();
+                for (int i = 0; i < xReal.Length; i++)
+                {
+                    realSeries.Add(new ImagePoint
+                    {
+                        X = xReal[i],
+                        Y = yReal[i]
+                    });
+                }
+
+                result.Add(realSeries);
+            }
+
+            return result;
+        }
+
+        private string BuildTracedSeriesText(List<List<ImagePoint>> tracedSeries)
+        {
+            var sb = new StringBuilder();
+            sb.Append("X");
+            for (int i = 0; i < tracedSeries.Count; i++)
+                sb.Append($"\tY{i + 1}");
+            sb.AppendLine();
+
+            var xValues = tracedSeries
+                .SelectMany(series => series.Select(point => point.X))
+                .Distinct()
+                .OrderBy(x => x)
+                .ToList();
+
+            foreach (double x in xValues)
+            {
+                sb.Append($"{x,14:F6}");
+
+                foreach (var series in tracedSeries)
+                {
+                    double? y = InterpolateY(series, x);
+                    sb.Append('\t');
+                    if (y.HasValue)
+                        sb.Append($"{y.Value,14:F6}");
+                }
+
+                sb.AppendLine();
+            }
+
+            return sb.ToString();
+        }
+
+        private static double? InterpolateY(List<ImagePoint> series, double x)
+        {
+            if (series.Count == 0)
+                return null;
+
+            var ordered = series.OrderBy(point => point.X).ToList();
+
+            for (int i = 0; i < ordered.Count; i++)
+            {
+                if (Math.Abs(ordered[i].X - x) < 1e-9)
+                    return ordered[i].Y;
+            }
+
+            for (int i = 1; i < ordered.Count; i++)
+            {
+                var left = ordered[i - 1];
+                var right = ordered[i];
+
+                if (x < left.X || x > right.X || Math.Abs(right.X - left.X) < 1e-12)
+                    continue;
+
+                double t = (x - left.X) / (right.X - left.X);
+                return left.Y + t * (right.Y - left.Y);
+            }
+
+            return null;
         }
         
         private void OnCopyCurveData()
@@ -461,22 +604,6 @@ namespace AutoPlot.ViewModels
             _workingImage?.Dispose();
             _workingImage = inputImage.Clone();
         }
-        [RelayCommand]
-        private void StartSeriesTrace()
-        {
-            if (SeriesCount <= 0)
-            {
-                MessageBox.Show("系列数は1以上を入力してください。");
-                return;
-            }
-
-
-            CurrentSeriesIndex = 0;
-            IsSeriesTraceMode = true;
-
-            MessageBox.Show($"系列1をなぞってください。");
-        }
-
     }
 }
 
