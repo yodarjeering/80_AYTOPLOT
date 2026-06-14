@@ -243,8 +243,9 @@ namespace AutoPlot.ViewModels
                 _noiseMask,
                 new OpenCvSharp.Point((int)p1.X, (int)p1.Y),
                 new OpenCvSharp.Point((int)p2.X, (int)p2.Y),
-                Scalar.White,
-                _penSize
+                new Scalar(255),
+                _penSize,
+                LineTypes.AntiAlias
             );
 
             UpdateNoiseOverlay();
@@ -542,7 +543,7 @@ namespace AutoPlot.ViewModels
                     traceMask,
                     ToCvPoint(guideSeries[i - 1], imageWidth, imageHeight),
                     ToCvPoint(guideSeries[i], imageWidth, imageHeight),
-                    Scalar.White,
+                    new Scalar(255),
                     searchBandThickness,
                     LineTypes.AntiAlias);
             }
@@ -557,11 +558,11 @@ namespace AutoPlot.ViewModels
                 var candidates = new List<int>();
                 for (int y = 0; y < imageHeight; y++)
                 {
-                    if (traceMask.At<byte>(y, x) == 0)
+                    if (traceMask.Get<byte>(y, x) == 0)
                         continue;
 
-                    byte grayValue = gray.At<byte>(y, x);
-                    Vec3b hsvValue = hsv.At<Vec3b>(y, x);
+                    byte grayValue = gray.Get<byte>(y, x);
+                    Vec3b hsvValue = hsv.Get<Vec3b>(y, x);
                     bool isDarkInk = grayValue < 190;
                     bool isColoredInk = hsvValue.Item0 > 5 && hsvValue.Item0 < 175 && hsvValue.Item1 > 45 && hsvValue.Item2 < 250;
 
