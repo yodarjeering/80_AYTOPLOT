@@ -44,9 +44,9 @@
                     Text="{Binding SeriesCount, UpdateSourceTrigger=PropertyChanged}" /> -->
 <!-- 2026年6月8日　ボタン追加しただけでなんもしていない -->
                 <Button
-                    Content="Input series count"
+                    Content="Trace Series"
                     Style="{StaticResource MainMenuButtonStyle}"
-                    Command="{Binding StartSeriesTraceCommand}"/>
+                    Command="{Binding ShowSeriesTraceWindowCommand}"/>
 <!-- 
                 <Button Content="Noise removal"
                         Style="{StaticResource MainMenuButtonStyle}"
