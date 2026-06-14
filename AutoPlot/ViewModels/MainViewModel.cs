@@ -536,7 +536,8 @@ namespace AutoPlot.ViewModels
             if (guideSeries.Count < 2)
                 return detectedPixels;
 
-            using var traceMask = Mat.Zeros(imageHeight, imageWidth, MatType.CV_8UC1);
+            //using var traceMask = Mat.Zeros(imageHeight, imageWidth, MatType.CV_8UC1);
+            using var traceMask = new Mat(imageHeight, imageWidth, MatType.CV_8UC1, Scalar.Black);
             for (int i = 1; i < guideSeries.Count; i++)
             {
                 Cv2.Line(
