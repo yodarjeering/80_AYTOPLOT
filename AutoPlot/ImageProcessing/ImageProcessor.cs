@@ -129,12 +129,6 @@ namespace AutoPlot.ImageProcessing
                 }
             }
 
-            // ==== TBD debug用 ====
-            Cv2.ImShow("debug clean", clean);
-            Cv2.WaitKey(0);   // キー押すまで止まる
-            Cv2.DestroyAllWindows();
-            // =====
-
             Mat kernel = Cv2.GetStructuringElement(
                 MorphShapes.Rect, new OpenCvSharp.Size(3, 3));
             Mat clean2 = new();
