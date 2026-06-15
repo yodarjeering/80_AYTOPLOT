@@ -40,7 +40,7 @@ namespace AutoPlot.Views
             _currentLine = new Polyline
             {
                 Stroke = GetSeriesBrush(vm.CurrentSeriesIndex),
-                StrokeThickness = 2
+                StrokeThickness = 10
             };
             _currentLine.Points.Add(canvasPoint);
             TraceCanvas.Children.Add(_currentLine);
