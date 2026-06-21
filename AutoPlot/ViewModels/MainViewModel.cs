@@ -25,9 +25,10 @@ namespace AutoPlot.ViewModels
         [ObservableProperty] private string _imagePath = "";
         [ObservableProperty] private string _resultText = "";
         [ObservableProperty] private CurveData _curveData;
-        [ObservableProperty] private int seriesCount = 1;
-        [ObservableProperty] private int currentSeriesIndex = 0;
-        [ObservableProperty] private bool isSeriesTraceMode = false;
+
+        [ObservableProperty] private int _seriesCount = 1;
+        [ObservableProperty] private int _currentSeriesIndex = 0;
+        [ObservableProperty] private bool _isSeriesTraceMode = false;
 
         // ===== Image =====
         private BitmapSource _inputBitmap;
@@ -84,6 +85,7 @@ namespace AutoPlot.ViewModels
         public IRelayCommand NoiseRemovalCompleteCommand { get; }
         public IRelayCommand OnShowUpdateGraphCommand { get; }
         public IRelayCommand CopyCurveDataCommand { get; }
+        //public IRelayCommand StartSeriesTraceCommand { get; }
         public IRelayCommand ShowNoiseRemovalWindowCommand { get; } // <- 14 追加
         public IRelayCommand ShowSeriesTraceWindowCommand { get; }
 
@@ -98,6 +100,7 @@ namespace AutoPlot.ViewModels
             ShowSeriesTraceWindowCommand = new RelayCommand(OnShowSeriesTraceWindow);
             OnShowUpdateGraphCommand = new RelayCommand(OnShowUpdateGraph);
             CopyCurveDataCommand = new RelayCommand(OnCopyCurveData);
+            //StartSeriesTraceCommand = new RelayCommand(OnStartSeriesTrace);
 
         }
 
