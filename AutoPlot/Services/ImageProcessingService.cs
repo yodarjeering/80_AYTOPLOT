@@ -1,5 +1,6 @@
 using AutoPlot.ImageProcessing;
 using AutoPlot.Models;
+using AutoPlot.Utils;
 using OpenCvSharp;
 using System.Windows;
 
@@ -54,7 +55,7 @@ namespace AutoPlot.Services
             Cv2.Rectangle(
                 dimmed,
                 roi,
-                new Scalar(0, 255, 0),
+                PlotColors.RoiHighlightScalar,
                 2
             );
 

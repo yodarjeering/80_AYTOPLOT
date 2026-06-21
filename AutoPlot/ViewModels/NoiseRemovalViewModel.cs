@@ -1,3 +1,4 @@
+using AutoPlot.Utils;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using OpenCvSharp;
@@ -46,7 +47,7 @@ namespace AutoPlot.ViewModels
         private void UpdatePreview()
         {
             using var display = _plotArea.Clone();
-            display.SetTo(new Scalar(0, 0, 255), _noiseMask);
+            display.SetTo(PlotColors.NoiseMaskScalar, _noiseMask);
             PreviewImage = BitmapSourceConverter.ToBitmapSource(display);
         }
 

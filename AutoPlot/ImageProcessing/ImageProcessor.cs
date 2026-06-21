@@ -2,6 +2,7 @@ using OpenCvSharp;
 using AutoPlot.Models;
 using MathNet.Numerics.Statistics;
 using AutoPlot.ImageProcessing.Helpers;
+using AutoPlot.Utils;
 using System.Windows;
 
 
@@ -416,7 +417,7 @@ namespace AutoPlot.ImageProcessing
                     overlay,
                     graphPoints[i - 1],
                     graphPoints[i],
-                    new Scalar(255, 0, 0, 255), // ←こいつは必要
+                    PlotColors.GetSeriesScalarBgra(0),
                     2
                 );
             }

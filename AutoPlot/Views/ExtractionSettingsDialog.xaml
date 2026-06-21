@@ -27,32 +27,32 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="MovingAverageWindow" VerticalAlignment="Center" Margin="0,0,8,8"/>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="移動平均" VerticalAlignment="Center" Margin="0,0,8,8"/>
                 <Slider Grid.Row="0" Grid.Column="1" Minimum="1" Maximum="51" TickFrequency="1" IsSnapToTickEnabled="True"
                         Value="{Binding MovingAverageWindow, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,8"/>
                 <TextBox Grid.Row="0" Grid.Column="2" Width="60" Text="{Binding MovingAverageWindow, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Margin="0,0,0,8"/>
 
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="CurveThreshold" VerticalAlignment="Center" Margin="0,0,8,8"/>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="曲線閾値" VerticalAlignment="Center" Margin="0,0,8,8"/>
                 <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True"
                         Value="{Binding CurveThreshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,8"/>
                 <TextBox Grid.Row="1" Grid.Column="2" Width="60" Text="{Binding CurveThreshold, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Margin="0,0,0,8"/>
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="NoiseMaskThreshold" VerticalAlignment="Center" Margin="0,0,8,8"/>
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="ノイズマスク閾値" VerticalAlignment="Center" Margin="0,0,8,8"/>
                 <Slider Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="255" TickFrequency="1" IsSnapToTickEnabled="True"
                         Value="{Binding NoiseMaskThreshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,8"/>
                 <TextBox Grid.Row="2" Grid.Column="2" Width="60" Text="{Binding NoiseMaskThreshold, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Margin="0,0,0,8"/>
 
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="TraceSearchBandWidth" VerticalAlignment="Center" Margin="0,0,8,8"/>
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="検出幅" VerticalAlignment="Center" Margin="0,0,8,8"/>
                 <Slider Grid.Row="3" Grid.Column="1" Minimum="1" Maximum="101" TickFrequency="1" IsSnapToTickEnabled="True"
                         Value="{Binding TraceSearchBandWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,8"/>
                 <TextBox Grid.Row="3" Grid.Column="2" Width="60" Text="{Binding TraceSearchBandWidth, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Margin="0,0,0,8"/>
 
-                <TextBlock Grid.Row="4" Grid.Column="0" Text="MinCurveLength" VerticalAlignment="Center" Margin="0,0,8,8"/>
+                <TextBlock Grid.Row="4" Grid.Column="0" Text="最小検出曲線" VerticalAlignment="Center" Margin="0,0,8,8"/>
                 <Slider Grid.Row="4" Grid.Column="1" Minimum="1" Maximum="500" TickFrequency="1" IsSnapToTickEnabled="True"
                         Value="{Binding MinCurveLength, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,8"/>
                 <TextBox Grid.Row="4" Grid.Column="2" Width="60" Text="{Binding MinCurveLength, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}" Margin="0,0,0,8"/>
 
-                <TextBlock Grid.Row="5" Grid.Column="0" Text="OutlierRemovalThreshold" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBlock Grid.Row="5" Grid.Column="0" Text="外れ値閾値" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <Slider Grid.Row="5" Grid.Column="1" Minimum="0" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True"
                         Value="{Binding OutlierRemovalThreshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,0"/>
                 <TextBox Grid.Row="5" Grid.Column="2" Width="60" Text="{Binding OutlierRemovalThreshold, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}"/>

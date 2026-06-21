@@ -287,7 +287,7 @@ namespace AutoPlot.ViewModels
         private void UpdateNoiseOverlay()
         {
             using var display = _plotArea.Clone();
-            display.SetTo(new Scalar(0, 0, 255), _noiseMask);
+            display.SetTo(PlotColors.NoiseMaskScalar, _noiseMask);
             InputBitmap = BitmapSourceConverter.ToBitmapSource(display);
         }
 
@@ -370,18 +370,6 @@ namespace AutoPlot.ViewModels
 
         private void DrawDetectedPixelSeriesOnImage(Mat baseImg)
         {
-            Scalar[] colors =
-            {
-                new Scalar(0, 0, 255),
-                new Scalar(255, 0, 0),
-                new Scalar(0, 160, 0),
-                new Scalar(0, 165, 255),
-                new Scalar(128, 0, 128),
-                new Scalar(42, 42, 165),
-                new Scalar(147, 20, 255),
-                new Scalar(128, 128, 0)
-            };
-
             for (int seriesIndex = 0; seriesIndex < _detectedPixelSeries.Count; seriesIndex++)
             {
                 var series = _detectedPixelSeries[seriesIndex];
@@ -391,7 +379,7 @@ namespace AutoPlot.ViewModels
                         baseImg,
                         ToWorkingImagePoint(series[i - 1]),
                         ToWorkingImagePoint(series[i]),
-                        colors[seriesIndex % colors.Length],
+                        PlotColors.GetSeriesScalar(seriesIndex),
                         2,
                         LineTypes.AntiAlias);
                 }
@@ -415,7 +403,7 @@ namespace AutoPlot.ViewModels
                     baseImg,
                     p1.Value,
                     p2.Value,
-                    new Scalar(0, 0, 255),
+                    PlotColors.GetSeriesScalar(0),
                     2,
                     LineTypes.AntiAlias);
             }
