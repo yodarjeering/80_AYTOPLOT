@@ -29,32 +29,15 @@
             <StackPanel Margin="10">
                 <TextBlock Text="Menu" FontWeight="Bold" FontSize="15" Margin="0,0,0,10"/>
 
-
-                <!-- TBD 画像をパスで入力する機能はいったん置く -->
-                <!-- <Button Content="画像パス入力"
-                        Style="{StaticResource MainMenuButtonStyle}"
-                        Click="OnShowPathInputDialog" /> -->
-
                 <Button Content="Settings"
                         Style="{StaticResource MainMenuButtonStyle}" 
                         Command="{Binding AxisCalibrationCommand}" />
 
-                <!-- <TextBox
-                    Width="80"
-                    Text="{Binding SeriesCount, UpdateSourceTrigger=PropertyChanged}" /> -->
-<!-- 2026年6月8日　ボタン追加しただけでなんもしていない -->
                 <Button
                     Content="Trace Series"
                     Style="{StaticResource MainMenuButtonStyle}"
                     Command="{Binding ShowSeriesTraceWindowCommand}"/>
-<!-- 
-                <Button Content="Noise removal"
-                        Style="{StaticResource MainMenuButtonStyle}"
-                        Command="{Binding NoiseRemovalCommand}" /> -->
 
-                <!-- <Button Content="Complete removal"
-                        Style="{StaticResource MainMenuButtonStyle}"
-                        Command="{Binding NoiseRemovalCompleteCommand}" /> -->
                 <Button Content="Noise removal"
                         Style="{StaticResource MainMenuButtonStyle}"
                         Command="{Binding ShowNoiseRemovalWindowCommand}" Click="Button_Click" />        
@@ -70,10 +53,7 @@
                 <Button Content="Copy data"
                         Command="{Binding CopyCurveDataCommand}"
                         Style="{StaticResource MainMenuButtonStyle}" />
-
-
-                
-
+                        
             </StackPanel>
         </ScrollViewer>
 

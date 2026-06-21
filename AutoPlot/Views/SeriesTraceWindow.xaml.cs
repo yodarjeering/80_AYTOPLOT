@@ -92,6 +92,11 @@ namespace AutoPlot.Views
             });
         }
 
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
+        {
+            DialogResult = false;
+        }
+
         private void RedrawCompletedSeries()
         {
             TraceCanvas.Children.Clear();
