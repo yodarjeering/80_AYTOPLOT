@@ -5,6 +5,7 @@ using AutoPlot.Views;
 using AutoPlot.ImageProcessing.Helpers;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MathNet.Numerics.Statistics;
 using OpenCvSharp;
 using OpenCvSharp.WpfExtensions;
 using System.Windows;
@@ -45,6 +46,7 @@ namespace AutoPlot.ViewModels
         private Mat _plotArea;
         private Mat _workingImage; //　キャリブレーション＆ノイズ除去の基準画像
         private Mat _originalPlotArea; // ノイズ除去前の plotArea を保持（ノイズ除去のやり直し用）
+        private bool _hasNoiseRemovalApplied = false;
         public double CanvasWidth  { get; set; }
         public double CanvasHeight { get; set; }
         private BitmapSource _graphBitmap;
@@ -78,12 +80,15 @@ namespace AutoPlot.ViewModels
             IsYLog = false
         };
 
+        public ExtractionSettings ExtractionSettings { get; private set; } = new();
+
         // ===== Commands =====
         public IRelayCommand LoadImageCommand { get; }
         public IRelayCommand AxisCalibrationCommand { get; }
         public IRelayCommand ShowOriginalImageCommand { get; }
         public IRelayCommand NoiseRemovalCommand { get; }
         public IRelayCommand NoiseRemovalCompleteCommand { get; }
+        public IRelayCommand ExtractionSettingsCommand { get; }
         public IRelayCommand OnShowUpdateGraphCommand { get; }
         public IRelayCommand CopyCurveDataCommand { get; }
         //public IRelayCommand StartSeriesTraceCommand { get; }
@@ -99,6 +104,7 @@ namespace AutoPlot.ViewModels
             NoiseRemovalCommand = new RelayCommand(OnNoiseRemoval);
             ShowNoiseRemovalWindowCommand = new RelayCommand(OnShowNoiseRemovalWindow); // <- 14追加
             ShowSeriesTraceWindowCommand = new RelayCommand(OnShowSeriesTraceWindow);
+            ExtractionSettingsCommand = new RelayCommand(OnExtractionSettings);
             OnShowUpdateGraphCommand = new RelayCommand(OnShowUpdateGraph);
             CopyCurveDataCommand = new RelayCommand(OnCopyCurveData);
             //StartSeriesTraceCommand = new RelayCommand(OnStartSeriesTrace);
@@ -117,6 +123,7 @@ namespace AutoPlot.ViewModels
             _rawTraceSeries.Clear();
             _detectedPixelSeries.Clear();
             _detectedSeries.Clear();
+            _hasNoiseRemovalApplied = false;
             _originalBitmap = OpenCvUtils.LoadBitmap(ImagePath);
             InputBitmap = _originalBitmap;
             _displayState = DisplayState.Original;
@@ -187,20 +194,10 @@ namespace AutoPlot.ViewModels
             _plotArea?.Dispose();
             _plotArea = new Mat(_workingImage, _roi).Clone();
             _originalPlotArea = _plotArea.Clone(); // キャリブレーション後の plotArea を保存
+            _hasNoiseRemovalApplied = false;
 
-            var data = _service.RunPlotArea(
-                _plotArea,
-                null, // ←ここはダミー
-                _roi,
-                _workingImage.Size(),
-                _axisSettings.XMin, _axisSettings.XMax,
-                _axisSettings.YMin, _axisSettings.YMax,
-                _axisSettings.IsXLog ? "log" : "linear",
-                _axisSettings.IsYLog ? "log" : "linear"
-            );
-
-            CurveData = data;
-            _roi = data.PlotRoi;
+            CurveData = RunCurrentPlotExtraction();
+            _roi = CurveData.PlotRoi;
 
             UpdateDisplay();
             _displayState = DisplayState.AxisCalibrated;
@@ -217,6 +214,25 @@ namespace AutoPlot.ViewModels
             InputBitmap = _originalBitmap;
             _displayState = DisplayState.Original;
             ResultText = "原図表示";
+        }
+
+        private void OnExtractionSettings()
+        {
+            var vm = new ExtractionSettingsDialogViewModel(ExtractionSettings);
+
+            var dialog = new ExtractionSettingsDialog
+            {
+                DataContext = vm,
+                Owner = Application.Current.MainWindow,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+
+            if (dialog.ShowDialog() != true)
+                return;
+
+            ExtractionSettings = vm.ToSettings();
+            RefreshExtractionWithCurrentSettings();
+            ResultText = "Extraction settings updated";
         }
 
         // =========================================================
@@ -558,14 +574,53 @@ namespace AutoPlot.ViewModels
                 _axisSettings.XMin, _axisSettings.XMax,
                 _axisSettings.YMin, _axisSettings.YMax,
                 _axisSettings.IsXLog ? "log" : "linear",
-                _axisSettings.IsYLog ? "log" : "linear"
+                _axisSettings.IsYLog ? "log" : "linear",
+                ExtractionSettings
             );
 
             _rawTraceSeries.Clear();
             _detectedPixelSeries.Clear();
             _detectedSeries.Clear();
+            _hasNoiseRemovalApplied = true;
             _displayState = DisplayState.AxisCalibrated;
     }
+
+        private CurveData RunCurrentPlotExtraction()
+        {
+            Mat plotAreaForGrid = _hasNoiseRemovalApplied && _originalPlotArea != null
+                ? _originalPlotArea
+                : _plotArea;
+
+            Mat? plotAreaForAnalysis = _hasNoiseRemovalApplied
+                ? _plotArea
+                : null;
+
+            return _service.RunPlotArea(
+                plotAreaForGrid,
+                plotAreaForAnalysis,
+                _roi,
+                _workingImage.Size(),
+                _axisSettings.XMin, _axisSettings.XMax,
+                _axisSettings.YMin, _axisSettings.YMax,
+                _axisSettings.IsXLog ? "log" : "linear",
+                _axisSettings.IsYLog ? "log" : "linear",
+                ExtractionSettings
+            );
+        }
+
+        private void RefreshExtractionWithCurrentSettings()
+        {
+            if (_plotArea == null || _workingImage == null || _roi.Width <= 0 || _roi.Height <= 0)
+                return;
+
+            CurveData = RunCurrentPlotExtraction();
+
+            if (_rawTraceSeries.Count > 0)
+                _detectedSeries = DetectSeriesFromTraceGuides(_rawTraceSeries);
+
+            if (_displayState == DisplayState.GraphPlot)
+                UpdateDisplayWithOverlay(CurveData);
+        }
 
         private void OnShowExtractedGraph(CurveData data)
         {
@@ -634,7 +689,7 @@ namespace AutoPlot.ViewModels
 
             foreach (var rawSeries in rawTraceSeries)
             {
-                var detectedPixels = DetectPixelSeriesNearGuide(rawSeries, gray, hsv, plotBgr.Width, plotBgr.Height);
+                var detectedPixels = DetectPixelSeriesNearGuide(rawSeries, gray, hsv, plotBgr.Width, plotBgr.Height, ExtractionSettings);
                 if (detectedPixels.Count == 0)
                     continue;
 
@@ -650,9 +705,9 @@ namespace AutoPlot.ViewModels
             Mat gray,
             Mat hsv,
             int imageWidth,
-            int imageHeight)
+            int imageHeight,
+            ExtractionSettings settings)
         {
-            const int searchBandThickness = 17;
             const int minColumnCandidates = 1;
 
             var detectedPixels = new List<System.Windows.Point>();
@@ -668,7 +723,7 @@ namespace AutoPlot.ViewModels
                     ToCvPoint(guideSeries[i - 1], imageWidth, imageHeight),
                     ToCvPoint(guideSeries[i], imageWidth, imageHeight),
                     new Scalar(255),
-                    searchBandThickness,
+                    settings.TraceSearchBandWidth,
                     LineTypes.AntiAlias);
             }
 
@@ -687,7 +742,7 @@ namespace AutoPlot.ViewModels
 
                     byte grayValue = gray.Get<byte>(y, x);
                     Vec3b hsvValue = hsv.Get<Vec3b>(y, x);
-                    bool isDarkInk = grayValue < 190;
+                    bool isDarkInk = grayValue < settings.CurveThreshold;
                     bool isColoredInk = hsvValue.Item0 > 5 && hsvValue.Item0 < 175 && hsvValue.Item1 > 45 && hsvValue.Item2 < 250;
 
                     if (isDarkInk || isColoredInk)
@@ -709,7 +764,137 @@ namespace AutoPlot.ViewModels
                 detectedPixels.Add(new System.Windows.Point(x, detectedY));
             }
 
+            detectedPixels = RemoveOutlierPoints(
+                detectedPixels,
+                settings.MovingAverageWindow,
+                settings.OutlierRemovalThreshold);
+            detectedPixels = ApplyMovingAverageToPoints(
+                detectedPixels,
+                settings.MovingAverageWindow);
+
             return detectedPixels;
+        }
+
+        private static List<System.Windows.Point> ApplyMovingAverageToPoints(
+            List<System.Windows.Point> points,
+            int window)
+        {
+            if (points.Count == 0 || window <= 1)
+                return points;
+
+            int normalizedWindow = Math.Max(1, window);
+            int leftRadius = (normalizedWindow - 1) / 2;
+            int rightRadius = normalizedWindow / 2;
+            var smoothed = new List<System.Windows.Point>(points.Count);
+
+            for (int i = 0; i < points.Count; i++)
+            {
+                int start = Math.Max(0, i - leftRadius);
+                int end = Math.Min(points.Count - 1, i + rightRadius);
+                double y = points
+                    .Skip(start)
+                    .Take(end - start + 1)
+                    .Average(p => p.Y);
+
+                smoothed.Add(new System.Windows.Point(points[i].X, y));
+            }
+
+            return smoothed;
+        }
+
+        private static List<System.Windows.Point> RemoveOutlierPoints(
+            List<System.Windows.Point> points,
+            int window,
+            int threshold)
+        {
+            if (points.Count == 0 || threshold <= 0)
+                return points;
+
+            var filtered = points.OrderBy(p => p.X).ToList();
+
+            for (int pass = 0; pass < 2; pass++)
+            {
+                var next = new List<System.Windows.Point>(filtered.Count);
+                int normalizedWindow = Math.Max(5, window);
+                int leftRadius = (normalizedWindow - 1) / 2;
+                int rightRadius = normalizedWindow / 2;
+
+                for (int i = 0; i < filtered.Count; i++)
+                {
+                    if (!TryPredictYFromNeighborPoints(filtered, i, leftRadius, rightRadius, out double expectedY) ||
+                        Math.Abs(filtered[i].Y - expectedY) <= threshold)
+                    {
+                        next.Add(filtered[i]);
+                    }
+                }
+
+                if (next.Count == filtered.Count)
+                    return filtered;
+
+                filtered = next;
+            }
+
+            return filtered;
+        }
+
+        private static bool TryPredictYFromNeighborPoints(
+            List<System.Windows.Point> points,
+            int targetIndex,
+            int leftRadius,
+            int rightRadius,
+            out double expectedY)
+        {
+            int start = Math.Max(0, targetIndex - leftRadius);
+            int end = Math.Min(points.Count - 1, targetIndex + rightRadius);
+            var neighbors = new List<System.Windows.Point>();
+
+            for (int i = start; i <= end; i++)
+            {
+                if (i != targetIndex)
+                    neighbors.Add(points[i]);
+            }
+
+            if (neighbors.Count < 2)
+            {
+                expectedY = 0;
+                return false;
+            }
+
+            var target = points[targetIndex];
+            System.Windows.Point left = default;
+            System.Windows.Point right = default;
+            bool hasLeft = false;
+            bool hasRight = false;
+
+            for (int i = neighbors.Count - 1; i >= 0; i--)
+            {
+                if (neighbors[i].X < target.X)
+                {
+                    left = neighbors[i];
+                    hasLeft = true;
+                    break;
+                }
+            }
+
+            for (int i = 0; i < neighbors.Count; i++)
+            {
+                if (neighbors[i].X > target.X)
+                {
+                    right = neighbors[i];
+                    hasRight = true;
+                    break;
+                }
+            }
+
+            if (hasLeft && hasRight && Math.Abs(right.X - left.X) > 1e-9)
+            {
+                double t = (target.X - left.X) / (right.X - left.X);
+                expectedY = left.Y + t * (right.Y - left.Y);
+                return true;
+            }
+
+            expectedY = Statistics.Median(neighbors.Select(p => p.Y));
+            return true;
         }
 
         private static Dictionary<int, double> BuildGuideYByX(List<System.Windows.Point> guideSeries, int imageWidth)
@@ -875,6 +1060,7 @@ namespace AutoPlot.ViewModels
             _rawTraceSeries.Clear();
             _detectedPixelSeries.Clear();
             _detectedSeries.Clear();
+            _hasNoiseRemovalApplied = false;
             Mat inputImage = OpenCvUtils.BitmapImageToMat(InputBitmap);
 
             _roi = await Task.Run(() =>
