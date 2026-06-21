@@ -49,6 +49,7 @@ namespace AutoPlot.ViewModels
         public double CanvasHeight { get; set; }
         private BitmapSource _graphBitmap;
         private List<List<System.Windows.Point>> _rawTraceSeries = new();
+        private List<List<System.Windows.Point>> _detectedPixelSeries = new();
         private List<List<ImagePoint>> _detectedSeries = new();
 
         public BitmapSource GraphBitmap
@@ -114,6 +115,7 @@ namespace AutoPlot.ViewModels
 
             ResultText = "処理中…";
             _rawTraceSeries.Clear();
+            _detectedPixelSeries.Clear();
             _detectedSeries.Clear();
             _originalBitmap = OpenCvUtils.LoadBitmap(ImagePath);
             InputBitmap = _originalBitmap;
@@ -179,6 +181,7 @@ namespace AutoPlot.ViewModels
             _axisSettings.YMax = vm.YMax;
             _axisSettings.IsYLog = vm.IsYLog;
             _rawTraceSeries.Clear();
+            _detectedPixelSeries.Clear();
             _detectedSeries.Clear();
 
             _plotArea?.Dispose();
@@ -318,22 +321,28 @@ namespace AutoPlot.ViewModels
             if (baseImg.Channels() == 4)
                 Cv2.CvtColor(baseImg, baseImg, ColorConversionCodes.BGRA2BGR);
 
-            var overlay = data.OverlayGraphMat;
-            if (overlay == null)
-                return;
-
-            // ★ サイズが違ったら即エラーにする
-            if (overlay.Size() != baseImg.Size())
+            if (_detectedPixelSeries.Count > 0)
             {
-                MessageBox.Show(
-                    $"Overlay size mismatch\n" +
-                    $"Base: {baseImg.Size()}\n" +
-                    $"Overlay: {overlay.Size()}",
-                    "UpdateDisplayWithOverlay ERROR"
-                );
-                return;
+                DrawDetectedPixelSeriesOnImage(baseImg);
+            }
+            else if (data.OverlayGraphMat != null &&
+                     data.OverlayGraphMat.Size() == baseImg.Size() &&
+                     data.OverlayGraphMat.Channels() == 4)
+            {
+                ApplyOverlayMat(baseImg, data.OverlayGraphMat);
+            }
+            else
+            {
+                DrawCurveDataOnImage(baseImg, data);
             }
 
+            InputBitmap = BitmapSourceConverter.ToBitmapSource(baseImg);
+            // 抽出したグラフを描画
+            OnShowExtractedGraph(CurveData);
+        }
+
+        private static void ApplyOverlayMat(Mat baseImg, Mat overlay)
+        {
             using var alpha = new Mat();
             Cv2.ExtractChannel(overlay, alpha, 3);
 
@@ -341,10 +350,116 @@ namespace AutoPlot.ViewModels
             Cv2.CvtColor(overlay, overlayBgr, ColorConversionCodes.BGRA2BGR);
 
             overlayBgr.CopyTo(baseImg, alpha);
+        }
 
-            InputBitmap = BitmapSourceConverter.ToBitmapSource(baseImg);
-            // 抽出したグラフを描画
-            OnShowExtractedGraph(CurveData);
+        private void DrawDetectedPixelSeriesOnImage(Mat baseImg)
+        {
+            Scalar[] colors =
+            {
+                new Scalar(0, 0, 255),
+                new Scalar(255, 0, 0),
+                new Scalar(0, 160, 0),
+                new Scalar(0, 165, 255),
+                new Scalar(128, 0, 128),
+                new Scalar(42, 42, 165),
+                new Scalar(147, 20, 255),
+                new Scalar(128, 128, 0)
+            };
+
+            for (int seriesIndex = 0; seriesIndex < _detectedPixelSeries.Count; seriesIndex++)
+            {
+                var series = _detectedPixelSeries[seriesIndex];
+                for (int i = 1; i < series.Count; i++)
+                {
+                    Cv2.Line(
+                        baseImg,
+                        ToWorkingImagePoint(series[i - 1]),
+                        ToWorkingImagePoint(series[i]),
+                        colors[seriesIndex % colors.Length],
+                        2,
+                        LineTypes.AntiAlias);
+                }
+            }
+        }
+
+        private void DrawCurveDataOnImage(Mat baseImg, CurveData data)
+        {
+            if (data?.Points == null || data.Points.Count < 2 || _plotArea == null)
+                return;
+
+            for (int i = 1; i < data.Points.Count; i++)
+            {
+                var p1 = RealPointToWorkingImagePoint(data.Points[i - 1]);
+                var p2 = RealPointToWorkingImagePoint(data.Points[i]);
+
+                if (p1 == null || p2 == null)
+                    continue;
+
+                Cv2.Line(
+                    baseImg,
+                    p1.Value,
+                    p2.Value,
+                    new Scalar(0, 0, 255),
+                    2,
+                    LineTypes.AntiAlias);
+            }
+        }
+
+        private OpenCvSharp.Point ToWorkingImagePoint(System.Windows.Point roiPoint)
+        {
+            return new OpenCvSharp.Point(
+                _roi.X + Math.Clamp((int)Math.Round(roiPoint.X), 0, _roi.Width - 1),
+                _roi.Y + Math.Clamp((int)Math.Round(roiPoint.Y), 0, _roi.Height - 1));
+        }
+
+        private OpenCvSharp.Point? RealPointToWorkingImagePoint(ImagePoint point)
+        {
+            double x = RealToPixel(
+                point.X,
+                _axisSettings.XMin,
+                _axisSettings.XMax,
+                _roi.Width,
+                _axisSettings.IsXLog);
+
+            double y = RealToPixel(
+                point.Y,
+                _axisSettings.YMin,
+                _axisSettings.YMax,
+                _roi.Height,
+                _axisSettings.IsYLog,
+                true);
+
+            if (double.IsNaN(x) || double.IsNaN(y))
+                return null;
+
+            return new OpenCvSharp.Point(
+                _roi.X + Math.Clamp((int)Math.Round(x), 0, _roi.Width - 1),
+                _roi.Y + Math.Clamp((int)Math.Round(y), 0, _roi.Height - 1));
+        }
+
+        private static double RealToPixel(double value, double min, double max, int pixelLength, bool isLog, bool invert = false)
+        {
+            if (pixelLength <= 1)
+                return double.NaN;
+
+            if (isLog)
+            {
+                if (value <= 0 || min <= 0 || max <= 0)
+                    return double.NaN;
+
+                value = Math.Log10(value);
+                min = Math.Log10(min);
+                max = Math.Log10(max);
+            }
+
+            if (Math.Abs(max - min) < 1e-12)
+                return double.NaN;
+
+            double t = (value - min) / (max - min);
+            if (invert)
+                t = 1 - t;
+
+            return t * (pixelLength - 1);
         }
 
 
@@ -446,6 +561,9 @@ namespace AutoPlot.ViewModels
                 _axisSettings.IsYLog ? "log" : "linear"
             );
 
+            _rawTraceSeries.Clear();
+            _detectedPixelSeries.Clear();
+            _detectedSeries.Clear();
             _displayState = DisplayState.AxisCalibrated;
     }
 
@@ -496,6 +614,7 @@ namespace AutoPlot.ViewModels
         private List<List<ImagePoint>> DetectSeriesFromTraceGuides(List<List<System.Windows.Point>> rawTraceSeries)
         {
             var detectedSeries = new List<List<ImagePoint>>();
+            _detectedPixelSeries.Clear();
 
             if (_plotArea == null || rawTraceSeries.Count == 0)
                 return detectedSeries;
@@ -519,6 +638,7 @@ namespace AutoPlot.ViewModels
                 if (detectedPixels.Count == 0)
                     continue;
 
+                _detectedPixelSeries.Add(detectedPixels);
                 detectedSeries.Add(ConvertPixelSeriesToRealPoints(detectedPixels, plotBgr.Width, plotBgr.Height));
             }
 
@@ -753,6 +873,7 @@ namespace AutoPlot.ViewModels
 
             _displayState = DisplayState.Original;
             _rawTraceSeries.Clear();
+            _detectedPixelSeries.Clear();
             _detectedSeries.Clear();
             Mat inputImage = OpenCvUtils.BitmapImageToMat(InputBitmap);
 

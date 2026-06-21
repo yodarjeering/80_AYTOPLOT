@@ -8,13 +8,13 @@ C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\obj\Debug\net8.0-
 AutoPlot
 none
 false
-TRACE;DEBUG;NET;NET8_0;NETCOREAPP
+TRACE;DEBUG;NET;NET8_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
 C:\Users\Owner\Desktop\my_program\kyo-pro\80_AutoPlot\AutoPlot\App.xaml
-5-415655186
+8-429345128
 231635967871
-191517621567
-206-992814062
-old\MainWindow.xaml;Views\AxisCalibrationDialog.xaml;Views\CurveDataCopyDialog.xaml;Views\ImagePathDialog.xaml;Views\MainView.xaml;
+28479209947
+206-18879453
+old\MainWindow.xaml;Views\AxisCalibrationDialog.xaml;Views\CurveDataCopyDialog.xaml;Views\ImagePathDialog.xaml;Views\MainView.xaml;Views\NoiseRemovalWindow.xaml;Views\SeriesCountDialog.xaml;Views\SeriesTraceWindow.xaml;
 
 False
 
