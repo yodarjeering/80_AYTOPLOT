@@ -2,6 +2,7 @@ using AutoPlot.Models;
 using AutoPlot.Services;
 using AutoPlot.Utils;
 using AutoPlot.Views;
+using AutoPlot.ImageProcessing.Helpers;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using OpenCvSharp;
@@ -47,7 +48,9 @@ namespace AutoPlot.ViewModels
         public double CanvasWidth  { get; set; }
         public double CanvasHeight { get; set; }
         private BitmapSource _graphBitmap;
-        
+        private List<List<System.Windows.Point>> _rawTraceSeries = new();
+        private List<List<ImagePoint>> _detectedSeries = new();
+
         public BitmapSource GraphBitmap
         {
             get => _graphBitmap;
@@ -84,6 +87,7 @@ namespace AutoPlot.ViewModels
         public IRelayCommand CopyCurveDataCommand { get; }
         //public IRelayCommand StartSeriesTraceCommand { get; }
         public IRelayCommand ShowNoiseRemovalWindowCommand { get; } // <- 14 追加
+        public IRelayCommand ShowSeriesTraceWindowCommand { get; }
 
 
         public MainViewModel()
@@ -93,7 +97,8 @@ namespace AutoPlot.ViewModels
             ShowOriginalImageCommand = new RelayCommand(OnShowOriginalImage);
             NoiseRemovalCommand = new RelayCommand(OnNoiseRemoval);
             ShowNoiseRemovalWindowCommand = new RelayCommand(OnShowNoiseRemovalWindow); // <- 14追加
-            OnShowUpdateGraphCommand = new RelayCommand(OnShowUpdateGraph); 
+            ShowSeriesTraceWindowCommand = new RelayCommand(OnShowSeriesTraceWindow);
+            OnShowUpdateGraphCommand = new RelayCommand(OnShowUpdateGraph);
             CopyCurveDataCommand = new RelayCommand(OnCopyCurveData);
             //StartSeriesTraceCommand = new RelayCommand(OnStartSeriesTrace);
 
@@ -108,11 +113,13 @@ namespace AutoPlot.ViewModels
                 return;
 
             ResultText = "処理中…";
+            _rawTraceSeries.Clear();
+            _detectedSeries.Clear();
             _originalBitmap = OpenCvUtils.LoadBitmap(ImagePath);
             InputBitmap = _originalBitmap;
             _displayState = DisplayState.Original;
             Mat inputImage = OpenCvUtils.BitmapImageToMat(_originalBitmap);
-            
+
             _roi = await Task.Run(() =>
                 _service.RunRoi(inputImage));
 
@@ -171,6 +178,8 @@ namespace AutoPlot.ViewModels
             _axisSettings.YMin = vm.YMin;
             _axisSettings.YMax = vm.YMax;
             _axisSettings.IsYLog = vm.IsYLog;
+            _rawTraceSeries.Clear();
+            _detectedSeries.Clear();
 
             _plotArea?.Dispose();
             _plotArea = new Mat(_workingImage, _roi).Clone();
@@ -187,11 +196,11 @@ namespace AutoPlot.ViewModels
                 _axisSettings.IsYLog ? "log" : "linear"
             );
 
-            CurveData = data; 
+            CurveData = data;
             _roi = data.PlotRoi;
 
             UpdateDisplay();
-            _displayState = DisplayState.AxisCalibrated; 
+            _displayState = DisplayState.AxisCalibrated;
         }
 
         // =========================================================
@@ -237,8 +246,9 @@ namespace AutoPlot.ViewModels
                 _noiseMask,
                 new OpenCvSharp.Point((int)p1.X, (int)p1.Y),
                 new OpenCvSharp.Point((int)p2.X, (int)p2.Y),
-                Scalar.White,
-                _penSize
+                new Scalar(255),
+                _penSize,
+                LineTypes.AntiAlias
             );
 
             UpdateNoiseOverlay();
@@ -252,14 +262,14 @@ namespace AutoPlot.ViewModels
             if (_plotArea == null)
                 return;
 
-            InputBitmap = BitmapSourceConverter.ToBitmapSource(_plotArea); 
+            InputBitmap = BitmapSourceConverter.ToBitmapSource(_plotArea);
         }
 
         private void UpdateNoiseOverlay()
         {
             using var display = _plotArea.Clone();
             display.SetTo(new Scalar(0, 0, 255), _noiseMask);
-            InputBitmap = BitmapSourceConverter.ToBitmapSource(display); 
+            InputBitmap = BitmapSourceConverter.ToBitmapSource(display);
         }
 
         // =========================================================
@@ -343,6 +353,51 @@ namespace AutoPlot.ViewModels
             UpdateDisplayWithOverlay(CurveData);
         }
 
+        private void OnShowSeriesTraceWindow()
+        {
+            if (_plotArea == null)
+            {
+                MessageBox.Show("先に画像読込と軸設定を完了してください。");
+                return;
+            }
+
+            var vm = new SeriesTraceViewModel(BitmapSourceConverter.ToBitmapSource(_plotArea));
+
+            var window = new SeriesTraceWindow
+            {
+                DataContext = vm,
+                Owner = Application.Current.MainWindow,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+
+            bool? result = window.ShowDialog();
+            if (result == true && vm.IsConfirmed)
+            {
+                _rawTraceSeries = vm.ResultSeries.Select(series => series.ToList()).ToList();
+                _detectedSeries = DetectSeriesFromTraceGuides(_rawTraceSeries);
+
+                if (_detectedSeries.Count == 0)
+                {
+                    ResultText = "No curve pixels were found near the traced guide(s).";
+                    MessageBox.Show(
+                        "No curve pixels were found near the traced guide(s). Please trace closer to the curve or adjust noise removal.",
+                        "Trace Series Detection");
+                    return;
+                }
+
+                if (_detectedSeries.Count < _rawTraceSeries.Count)
+                {
+                    ResultText = $"Detected {_detectedSeries.Count} of {_rawTraceSeries.Count} traced series.";
+                    MessageBox.Show(
+                        $"Detected {_detectedSeries.Count} of {_rawTraceSeries.Count} traced series. Series without nearby curve pixels were skipped instead of using raw trace points.",
+                        "Trace Series Detection");
+                    return;
+                }
+
+                ResultText = $"{_detectedSeries.Count} detected series from trace guide(s)";
+            }
+        }
+
         // 14追加
         private void OnShowNoiseRemovalWindow()
         {
@@ -396,22 +451,35 @@ namespace AutoPlot.ViewModels
 
         private void OnShowExtractedGraph(CurveData data)
         {
-            var mat = OpenCvUtils.RenderGraphFromCurveData(
-                data,
-                600, 400,
-                _axisSettings.XMin,
-                _axisSettings.XMax,
-                _axisSettings.YMin,
-                _axisSettings.YMax,
-                _axisSettings.IsXLog,
-                _axisSettings.IsYLog
-            );
+            var mat = _detectedSeries.Count > 0
+                ? OpenCvUtils.RenderGraphFromSeries(
+                    _detectedSeries,
+                    600, 400,
+                    _axisSettings.XMin,
+                    _axisSettings.XMax,
+                    _axisSettings.YMin,
+                    _axisSettings.YMax,
+                    _axisSettings.IsXLog,
+                    _axisSettings.IsYLog)
+                : OpenCvUtils.RenderGraphFromCurveData(
+                    data,
+                    600, 400,
+                    _axisSettings.XMin,
+                    _axisSettings.XMax,
+                    _axisSettings.YMin,
+                    _axisSettings.YMax,
+                    _axisSettings.IsXLog,
+                    _axisSettings.IsYLog
+                );
 
             GraphBitmap = BitmapSourceConverter.ToBitmapSource(mat);
         }
 
         private string BuildCurveDataText(CurveData data)
         {
+            if (_detectedSeries.Count > 0)
+                return BuildDetectedSeriesText(_detectedSeries);
+
             if (data?.Points == null || data.Points.Count == 0)
                 return string.Empty;
 
@@ -425,27 +493,234 @@ namespace AutoPlot.ViewModels
             return sb.ToString();
         }
 
+        private List<List<ImagePoint>> DetectSeriesFromTraceGuides(List<List<System.Windows.Point>> rawTraceSeries)
+        {
+            var detectedSeries = new List<List<ImagePoint>>();
 
-        //private void OnStartSeriesTrace()
-        //{
-        //    var vm = new SeriesCountDialogViewModel
-        //    {
-        //        SeriesCount = SeriesCount
-        //    };
+            if (_plotArea == null || rawTraceSeries.Count == 0)
+                return detectedSeries;
 
-        //    var dialog = new SeriesCountDialog
-        //    {
-        //        DataContext = vm,
-        //        Owner = Application.Current.MainWindow,
-        //        WindowStartupLocation = WindowStartupLocation.CenterOwner
-        //    };
+            using var plotBgr = new Mat();
+            if (_plotArea.Channels() == 1)
+                Cv2.CvtColor(_plotArea, plotBgr, ColorConversionCodes.GRAY2BGR);
+            else if (_plotArea.Channels() == 4)
+                Cv2.CvtColor(_plotArea, plotBgr, ColorConversionCodes.BGRA2BGR);
+            else
+                _plotArea.CopyTo(plotBgr);
 
-        //    if (dialog.ShowDialog() != true)
-        //        return;
+            using var gray = new Mat();
+            using var hsv = new Mat();
+            Cv2.CvtColor(plotBgr, gray, ColorConversionCodes.BGR2GRAY);
+            Cv2.CvtColor(plotBgr, hsv, ColorConversionCodes.BGR2HSV);
 
-        //    SeriesCount = vm.SeriesCount;
-        //    ResultText = $"系列数: {SeriesCount}";
-        //}
+            foreach (var rawSeries in rawTraceSeries)
+            {
+                var detectedPixels = DetectPixelSeriesNearGuide(rawSeries, gray, hsv, plotBgr.Width, plotBgr.Height);
+                if (detectedPixels.Count == 0)
+                    continue;
+
+                detectedSeries.Add(ConvertPixelSeriesToRealPoints(detectedPixels, plotBgr.Width, plotBgr.Height));
+            }
+
+            return detectedSeries;
+        }
+
+        private static List<System.Windows.Point> DetectPixelSeriesNearGuide(
+            List<System.Windows.Point> guideSeries,
+            Mat gray,
+            Mat hsv,
+            int imageWidth,
+            int imageHeight)
+        {
+            const int searchBandThickness = 17;
+            const int minColumnCandidates = 1;
+
+            var detectedPixels = new List<System.Windows.Point>();
+            if (guideSeries.Count < 2)
+                return detectedPixels;
+
+            //using var traceMask = Mat.Zeros(imageHeight, imageWidth, MatType.CV_8UC1);
+            using var traceMask = new Mat(imageHeight, imageWidth, MatType.CV_8UC1, Scalar.Black);
+            for (int i = 1; i < guideSeries.Count; i++)
+            {
+                Cv2.Line(
+                    traceMask,
+                    ToCvPoint(guideSeries[i - 1], imageWidth, imageHeight),
+                    ToCvPoint(guideSeries[i], imageWidth, imageHeight),
+                    new Scalar(255),
+                    searchBandThickness,
+                    LineTypes.AntiAlias);
+            }
+
+            var guideByX = BuildGuideYByX(guideSeries, imageWidth);
+
+            for (int x = 0; x < imageWidth; x++)
+            {
+                if (!guideByX.TryGetValue(x, out double guideY))
+                    continue;
+
+                var candidates = new List<int>();
+                for (int y = 0; y < imageHeight; y++)
+                {
+                    if (traceMask.Get<byte>(y, x) == 0)
+                        continue;
+
+                    byte grayValue = gray.Get<byte>(y, x);
+                    Vec3b hsvValue = hsv.Get<Vec3b>(y, x);
+                    bool isDarkInk = grayValue < 190;
+                    bool isColoredInk = hsvValue.Item0 > 5 && hsvValue.Item0 < 175 && hsvValue.Item1 > 45 && hsvValue.Item2 < 250;
+
+                    if (isDarkInk || isColoredInk)
+                        candidates.Add(y);
+                }
+
+                if (candidates.Count < minColumnCandidates)
+                    continue;
+
+                int bestY = candidates
+                    .OrderBy(y => Math.Abs(y - guideY))
+                    .First();
+
+                var localCluster = candidates
+                    .Where(y => Math.Abs(y - bestY) <= 2)
+                    .ToList();
+
+                double detectedY = localCluster.Count > 0 ? localCluster.Average() : bestY;
+                detectedPixels.Add(new System.Windows.Point(x, detectedY));
+            }
+
+            return detectedPixels;
+        }
+
+        private static Dictionary<int, double> BuildGuideYByX(List<System.Windows.Point> guideSeries, int imageWidth)
+        {
+            var guideByX = new Dictionary<int, double>();
+
+            for (int i = 1; i < guideSeries.Count; i++)
+            {
+                var p1 = guideSeries[i - 1];
+                var p2 = guideSeries[i];
+                int startX = Math.Clamp((int)Math.Round(Math.Min(p1.X, p2.X)), 0, imageWidth - 1);
+                int endX = Math.Clamp((int)Math.Round(Math.Max(p1.X, p2.X)), 0, imageWidth - 1);
+
+                if (startX == endX)
+                {
+                    guideByX[startX] = (p1.Y + p2.Y) / 2.0;
+                    continue;
+                }
+
+                for (int x = startX; x <= endX; x++)
+                {
+                    double t = (x - p1.X) / (p2.X - p1.X);
+                    if (double.IsNaN(t) || double.IsInfinity(t))
+                        continue;
+
+                    guideByX[x] = p1.Y + t * (p2.Y - p1.Y);
+                }
+            }
+
+            return guideByX;
+        }
+
+        private List<ImagePoint> ConvertPixelSeriesToRealPoints(
+            List<System.Windows.Point> detectedPixels,
+            int imageWidth,
+            int imageHeight)
+        {
+            double[] xPx = detectedPixels.Select(p => p.X).ToArray();
+            double[] yPx = detectedPixels.Select(p => p.Y).ToArray();
+
+            double[] xReal = PixelConverter.PxToReal(
+                xPx, 0, imageWidth,
+                _axisSettings.XMin, _axisSettings.XMax,
+                _axisSettings.IsXLog ? "log" : "linear");
+
+            double[] yReal = PixelConverter.PxToReal(
+                yPx, 0, imageHeight,
+                _axisSettings.YMin, _axisSettings.YMax,
+                _axisSettings.IsYLog ? "log" : "linear",
+                true);
+
+            var realSeries = new List<ImagePoint>();
+            for (int i = 0; i < xReal.Length; i++)
+            {
+                realSeries.Add(new ImagePoint
+                {
+                    X = xReal[i],
+                    Y = yReal[i]
+                });
+            }
+
+            return realSeries;
+        }
+
+        private static OpenCvSharp.Point ToCvPoint(System.Windows.Point point, int imageWidth, int imageHeight)
+        {
+            return new OpenCvSharp.Point(
+                Math.Clamp((int)Math.Round(point.X), 0, imageWidth - 1),
+                Math.Clamp((int)Math.Round(point.Y), 0, imageHeight - 1));
+        }
+
+        private string BuildDetectedSeriesText(List<List<ImagePoint>> tracedSeries)
+        {
+            var sb = new StringBuilder();
+            sb.Append("X");
+            for (int i = 0; i < tracedSeries.Count; i++)
+                sb.Append($"\tY{i + 1}");
+            sb.AppendLine();
+
+            var xValues = tracedSeries
+                .SelectMany(series => series.Select(point => point.X))
+                .Distinct()
+                .OrderBy(x => x)
+                .ToList();
+
+            foreach (double x in xValues)
+            {
+                sb.Append($"{x,14:F6}");
+
+                foreach (var series in tracedSeries)
+                {
+                    double? y = InterpolateY(series, x);
+                    sb.Append('\t');
+                    if (y.HasValue)
+                        sb.Append($"{y.Value,14:F6}");
+                }
+
+                sb.AppendLine();
+            }
+
+            return sb.ToString();
+        }
+
+        private static double? InterpolateY(List<ImagePoint> series, double x)
+        {
+            if (series.Count == 0)
+                return null;
+
+            var ordered = series.OrderBy(point => point.X).ToList();
+
+            for (int i = 0; i < ordered.Count; i++)
+            {
+                if (Math.Abs(ordered[i].X - x) < 1e-9)
+                    return ordered[i].Y;
+            }
+
+            for (int i = 1; i < ordered.Count; i++)
+            {
+                var left = ordered[i - 1];
+                var right = ordered[i];
+
+                if (x < left.X || x > right.X || Math.Abs(right.X - left.X) < 1e-12)
+                    continue;
+
+                double t = (x - left.X) / (right.X - left.X);
+                return left.Y + t * (right.Y - left.Y);
+            }
+
+            return null;
+        }
+
         private void OnCopyCurveData()
         {
             if (CurveData == null)
@@ -477,30 +752,16 @@ namespace AutoPlot.ViewModels
             using var mat = BitmapSourceConverter.ToMat(bitmap);
 
             _displayState = DisplayState.Original;
+            _rawTraceSeries.Clear();
+            _detectedSeries.Clear();
             Mat inputImage = OpenCvUtils.BitmapImageToMat(InputBitmap);
-            
+
             _roi = await Task.Run(() =>
                 _service.RunRoi(inputImage));
 
             _workingImage?.Dispose();
             _workingImage = inputImage.Clone();
         }
-        [RelayCommand]
-        private void StartSeriesTrace()
-        {
-            if (SeriesCount <= 0)
-            {
-                MessageBox.Show("系列数は1以上を入力してください。");
-                return;
-            }
-
-
-            CurrentSeriesIndex = 0;
-            IsSeriesTraceMode = true;
-
-            MessageBox.Show($"系列1をなぞってください。");
-        }
-
     }
 }
 
