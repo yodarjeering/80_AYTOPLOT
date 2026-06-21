@@ -41,6 +41,10 @@
                 <Button Content="Noise removal"
                         Style="{StaticResource MainMenuButtonStyle}"
                         Command="{Binding ShowNoiseRemovalWindowCommand}" Click="Button_Click" />        
+
+                <Button Content="Extraction Settings"
+                        Style="{StaticResource MainMenuButtonStyle}"
+                        Command="{Binding ExtractionSettingsCommand}" />
                 
                 <Button Content="Show graph"
                         Style="{StaticResource MainMenuButtonStyle}" 

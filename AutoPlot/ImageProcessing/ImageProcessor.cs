@@ -50,12 +50,13 @@ namespace AutoPlot.ImageProcessing
 
         public CurveData ProcessPlotArea(
             Mat plotAreaForGrid,                 // ROI切り出し済み
-            Mat plotAreaForAnalysis,
+            Mat? plotAreaForAnalysis,
             OpenCvSharp.Rect roi,          // 呼び出し元の確定値
             OpenCvSharp.Size workingImageSize,         // overlay用
             double xMinInput, double xMaxInput,
             double yMinInput, double yMaxInput,
-            string xScale, string yScale)
+            string xScale, string yScale,
+            ExtractionSettings settings)
         {
             // plotArea はすでに ROI 内なので、そのまま使う
             Mat gray = new();
@@ -63,8 +64,8 @@ namespace AutoPlot.ImageProcessing
             Cv2.CvtColor(plotAreaForGrid, gray, ColorConversionCodes.BGR2GRAY);
 
             Mat bw = new();
-            Cv2.Threshold(gray, bw, 0, 255,
-                ThresholdTypes.BinaryInv | ThresholdTypes.Otsu);
+            Cv2.Threshold(gray, bw, settings.CurveThreshold, 255,
+                ThresholdTypes.BinaryInv);
 
             // === グリッド除去（ROI内）===
             Mat hKernel = Cv2.GetStructuringElement(
@@ -96,7 +97,7 @@ namespace AutoPlot.ImageProcessing
                 Cv2.Threshold(
                     grayMask,
                     grayMaskBinary,
-                    200,   // ← ここが命（180〜220で調整）
+                    settings.NoiseMaskThreshold,
                     255,
                     ThresholdTypes.Binary
                 );
@@ -116,12 +117,14 @@ namespace AutoPlot.ImageProcessing
                 bwNoGrid, labels, stats, centroids,
                 PixelConnectivity.Connectivity8);
             Mat clean = Mat.Zeros(bwNoGrid.Size(), MatType.CV_8UC1);
-            int minArea = 10;
 
             for (int i = 1; i < numLabels; i++)
             {
                 int area = stats.Get<int>(i, (int)ConnectedComponentsTypes.Area);
-                if (area >= minArea)
+                int width = stats.Get<int>(i, (int)ConnectedComponentsTypes.Width);
+                int height = stats.Get<int>(i, (int)ConnectedComponentsTypes.Height);
+                int curveLength = Math.Max(width, height);
+                if (area > 0 && curveLength >= settings.MinCurveLength)
                 {
                     using var mask = new Mat();
                     Cv2.Compare(labels, i, mask, CmpType.EQ);
@@ -157,6 +160,9 @@ namespace AutoPlot.ImageProcessing
                     });
                 }
             }
+
+            pointsPx = RemoveOutliers(pointsPx, settings.MovingAverageWindow, settings.OutlierRemovalThreshold);
+            pointsPx = ApplyMovingAverage(pointsPx, settings.MovingAverageWindow);
 
             // === px → real ===
             double[] xPx = pointsPx.Select(p => p.X).ToArray();
@@ -196,6 +202,127 @@ namespace AutoPlot.ImageProcessing
                 PlotRoi = roi,
                 OverlayGraphMat = overlay
             };
+        }
+
+        private static List<ImagePoint> ApplyMovingAverage(List<ImagePoint> points, int window)
+        {
+            if (points.Count == 0 || window <= 1)
+                return points;
+
+            int normalizedWindow = Math.Max(1, window);
+            int leftRadius = (normalizedWindow - 1) / 2;
+            int rightRadius = normalizedWindow / 2;
+            var smoothed = new List<ImagePoint>(points.Count);
+
+            for (int i = 0; i < points.Count; i++)
+            {
+                int start = Math.Max(0, i - leftRadius);
+                int end = Math.Min(points.Count - 1, i + rightRadius);
+                double y = points
+                    .Skip(start)
+                    .Take(end - start + 1)
+                    .Average(p => p.Y);
+
+                smoothed.Add(new ImagePoint
+                {
+                    X = points[i].X,
+                    Y = y
+                });
+            }
+
+            return smoothed;
+        }
+
+        private static List<ImagePoint> RemoveOutliers(List<ImagePoint> points, int window, int threshold)
+        {
+            if (points.Count == 0 || threshold <= 0)
+                return points;
+
+            var filtered = points.OrderBy(p => p.X).ToList();
+
+            for (int pass = 0; pass < 2; pass++)
+            {
+                var next = new List<ImagePoint>(filtered.Count);
+                int normalizedWindow = Math.Max(5, window);
+                int leftRadius = (normalizedWindow - 1) / 2;
+                int rightRadius = normalizedWindow / 2;
+
+                for (int i = 0; i < filtered.Count; i++)
+                {
+                    if (!TryPredictYFromNeighbors(filtered, i, leftRadius, rightRadius, out double expectedY) ||
+                        Math.Abs(filtered[i].Y - expectedY) <= threshold)
+                    {
+                        next.Add(filtered[i]);
+                    }
+                }
+
+                if (next.Count == filtered.Count)
+                    return filtered;
+
+                filtered = next;
+            }
+
+            return filtered;
+        }
+
+        private static bool TryPredictYFromNeighbors(
+            List<ImagePoint> points,
+            int targetIndex,
+            int leftRadius,
+            int rightRadius,
+            out double expectedY)
+        {
+            int start = Math.Max(0, targetIndex - leftRadius);
+            int end = Math.Min(points.Count - 1, targetIndex + rightRadius);
+            var neighbors = new List<ImagePoint>();
+
+            for (int i = start; i <= end; i++)
+            {
+                if (i != targetIndex)
+                    neighbors.Add(points[i]);
+            }
+
+            if (neighbors.Count < 2)
+            {
+                expectedY = 0;
+                return false;
+            }
+
+            var target = points[targetIndex];
+            ImagePoint left = default;
+            ImagePoint right = default;
+            bool hasLeft = false;
+            bool hasRight = false;
+
+            for (int i = neighbors.Count - 1; i >= 0; i--)
+            {
+                if (neighbors[i].X < target.X)
+                {
+                    left = neighbors[i];
+                    hasLeft = true;
+                    break;
+                }
+            }
+
+            for (int i = 0; i < neighbors.Count; i++)
+            {
+                if (neighbors[i].X > target.X)
+                {
+                    right = neighbors[i];
+                    hasRight = true;
+                    break;
+                }
+            }
+
+            if (hasLeft && hasRight && Math.Abs(right.X - left.X) > 1e-9)
+            {
+                double t = (target.X - left.X) / (right.X - left.X);
+                expectedY = left.Y + t * (right.Y - left.Y);
+                return true;
+            }
+
+            expectedY = Statistics.Median(neighbors.Select(p => p.Y));
+            return true;
         }
 
 
