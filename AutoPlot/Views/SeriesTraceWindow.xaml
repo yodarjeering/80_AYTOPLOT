@@ -4,7 +4,9 @@
         Title="Trace Series"
         Width="900"
         Height="650"
-        WindowStartupLocation="CenterOwner">
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource AppBackgroundBrush}"
+        Foreground="{DynamicResource AppTextBrush}">
         <DockPanel Margin="10">
 
         <!-- Top: series count and instruction -->
@@ -53,7 +55,7 @@
 
         <!-- Bottom: operation buttons -->
         <Border DockPanel.Dock="Bottom"
-                BorderBrush="#DDDDDD"
+                BorderBrush="{DynamicResource AppBorderBrush}"
                 BorderThickness="0,1,0,0"
                 Padding="0,10,0,0"
                 Margin="0,10,0,0">
@@ -77,9 +79,9 @@
         </Border>
 
         <!-- Center: image and trace canvas -->
-        <Border BorderBrush="Gray"
+        <Border BorderBrush="{DynamicResource AppBorderBrush}"
                 BorderThickness="1"
-                Background="White">
+                Background="{DynamicResource AppSurfaceBrush}">
                 <Grid>
                 <Image x:Name="PlotImageControl"
                         Stretch="Uniform"

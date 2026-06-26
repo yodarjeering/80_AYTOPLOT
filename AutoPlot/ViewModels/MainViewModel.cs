@@ -21,6 +21,7 @@ namespace AutoPlot.ViewModels
     public partial class MainViewModel : ObservableObject
     {
         private readonly ImageProcessingService _service = new();
+        private readonly AppSettings _appSettings = AppSettingsService.Load();
 
         // ===== Bindable =====
         [ObservableProperty] private string _imagePath = "";
@@ -98,6 +99,8 @@ namespace AutoPlot.ViewModels
 
         public MainViewModel()
         {
+            AppThemeManager.Apply(_appSettings.Theme);
+
             LoadImageCommand = new RelayCommand(OnLoadImage);
             AxisCalibrationCommand = new RelayCommand(OnAxisCalibration);
             ShowOriginalImageCommand = new RelayCommand(OnShowOriginalImage);
@@ -141,20 +144,20 @@ namespace AutoPlot.ViewModels
         // =========================================================
         private void OnAxisCalibration()
         {
-            if (_displayState == DisplayState.AxisCalibrated)
-                return;
+            bool canCalibrateAxis = _originalBitmap != null && _roi.Width > 0 && _roi.Height > 0;
 
-            if (_originalBitmap == null || _roi.Width <= 0 || _roi.Height <= 0)
-                return;
+            if (canCalibrateAxis)
+            {
+                using var src = OpenCvUtils.BitmapImageToMat(_originalBitmap);
+                using var highlighted = _service.CreateRoiHighlightImage(src, _roi);
 
-            using var src = OpenCvUtils.BitmapImageToMat(_originalBitmap);
-            using var highlighted = _service.CreateRoiHighlightImage(src, _roi);
-
-            InputBitmap = BitmapSourceConverter.ToBitmapSource(highlighted);
-            ResultText = "軸キャリブレーション表示中";
+                InputBitmap = BitmapSourceConverter.ToBitmapSource(highlighted);
+                ResultText = "軸キャリブレーション表示中";
+            }
 
             var vm = new AxisCalibrationDialogViewModel
             {
+                SelectedTheme = _appSettings.Theme,
                 XMin = _axisSettings.XMin,
                 XMax = _axisSettings.XMax,
                 IsXLog = _axisSettings.IsXLog,
@@ -175,6 +178,16 @@ namespace AutoPlot.ViewModels
 
             if (dialog.ShowDialog() != true)
                 return;
+
+            _appSettings.Theme = vm.SelectedTheme;
+            AppSettingsService.Save(_appSettings);
+            AppThemeManager.Apply(vm.SelectedTheme);
+
+            if (!canCalibrateAxis)
+            {
+                ResultText = "Settings updated";
+                return;
+            }
 
             ApplyAxisCalibration(vm);
         }

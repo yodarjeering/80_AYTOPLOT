@@ -4,7 +4,9 @@
         Title="Noise Removal"
         Width="900"
         Height="650"
-        WindowStartupLocation="CenterOwner">
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource AppBackgroundBrush}"
+        Foreground="{DynamicResource AppTextBrush}">
 
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -48,9 +50,9 @@
 
         <!-- 中央: グラフ描画エリア -->
         <Border Grid.Row="1"
-                BorderBrush="Gray"
+                BorderBrush="{DynamicResource AppBorderBrush}"
                 BorderThickness="1"
-                Background="White"
+                Background="{DynamicResource AppSurfaceBrush}"
                 CornerRadius="4">
             <Grid>
                 <!-- あとで Image / Canvas / Plot コントロールを置く想定 -->

@@ -8,11 +8,13 @@
     AllowDrop="True"
     DragOver="Dialog_DragOver"
     Drop="Dialog_Drop"
-    WindowStartupLocation="CenterScreen">
+    WindowStartupLocation="CenterScreen"
+    Background="{DynamicResource AppBackgroundBrush}"
+    Foreground="{DynamicResource AppTextBrush}">
      
 
 
-    <StackPanel Margin="15" Width="450">
+    <StackPanel Margin="15" Width="450" Background="{DynamicResource AppBackgroundBrush}">
         <TextBlock Text="画像ファイルのパスを入力して下さい:" FontSize="14" Margin="0,0,0,8"/>
         
         <TextBox x:Name="PathTextBox"

@@ -12,7 +12,7 @@
 
                 <!-- Material Design テーマ -->
                 <materialDesign:BundledTheme
-                    BaseTheme="Dark"
+                    BaseTheme="Light"
                     PrimaryColor="DeepPurple"
                     SecondaryColor="Lime" />
 
@@ -24,6 +24,68 @@
 
             </ResourceDictionary.MergedDictionaries>
 
+            <SolidColorBrush x:Key="AppBackgroundBrush" Color="#FAFAFA"/>
+            <SolidColorBrush x:Key="AppSurfaceBrush" Color="White"/>
+            <SolidColorBrush x:Key="AppSurfaceAltBrush" Color="#F5F5F5"/>
+            <SolidColorBrush x:Key="AppBorderBrush" Color="#808080"/>
+            <SolidColorBrush x:Key="AppTextBrush" Color="#212121"/>
+            <SolidColorBrush x:Key="AppMutedTextBrush" Color="#666666"/>
+            <SolidColorBrush x:Key="AppPrimaryBrush" Color="#673AB7"/>
+            <SolidColorBrush x:Key="AppSecondaryBrush" Color="#CDDC39"/>
+            <SolidColorBrush x:Key="AppButtonForegroundBrush" Color="White"/>
+            <SolidColorBrush x:Key="AppInputBackgroundBrush" Color="White"/>
+
+            <Style TargetType="Window">
+                <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}"/>
+            </Style>
+
+            <Style TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}"/>
+            </Style>
+
+            <Style TargetType="GroupBox">
+                <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
+            </Style>
+
+            <Style TargetType="TextBox"
+                   BasedOn="{StaticResource MaterialDesignTextBox}">
+                <Setter Property="Background" Value="{DynamicResource AppInputBackgroundBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
+            </Style>
+
+            <Style TargetType="ComboBox"
+                   BasedOn="{StaticResource MaterialDesignComboBox}">
+                <Setter Property="Background" Value="{DynamicResource AppInputBackgroundBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
+                <Setter Property="ItemContainerStyle">
+                    <Setter.Value>
+                        <Style TargetType="ComboBoxItem">
+                            <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
+                            <Setter Property="Padding" Value="8,4"/>
+                        </Style>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style TargetType="CheckBox"
+                   BasedOn="{StaticResource MaterialDesignCheckBox}">
+                <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}"/>
+            </Style>
+
+            <Style TargetType="Button"
+                   BasedOn="{StaticResource MaterialDesignRaisedButton}">
+                <Setter Property="Background" Value="{DynamicResource AppPrimaryBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource AppButtonForegroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
+            </Style>
+
             <!-- 共通ボタンスタイル -->
             <Style x:Key="MainMenuButtonStyle" TargetType="Button"
                 BasedOn="{StaticResource MaterialDesignRaisedButton}">
@@ -31,6 +93,9 @@
                 <Setter Property="FontSize" Value="10"/>
                 <Setter Property="Margin" Value="5"/>
                 <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                <Setter Property="Background" Value="{DynamicResource AppPrimaryBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource AppButtonForegroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
             </Style>
 
 
