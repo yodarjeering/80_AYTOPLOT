@@ -566,10 +566,21 @@ namespace AutoPlot.ViewModels
                 ExtractionSettings
             );
 
-            _rawTraceSeries.Clear();
-            _detectedPixelSeries.Clear();
-            _detectedSeries.Clear();
             _hasNoiseRemovalApplied = true;
+
+            if (_rawTraceSeries.Count > 0)
+            {
+                _detectedSeries = DetectSeriesFromTraceGuides(_rawTraceSeries);
+                ResultText = _detectedSeries.Count > 0
+                    ? $"{_detectedSeries.Count} detected series from trace guide(s) after noise removal"
+                    : "No curve pixels were found near the traced guide(s) after noise removal.";
+            }
+            else
+            {
+                _detectedPixelSeries.Clear();
+                _detectedSeries.Clear();
+            }
+
             _displayState = DisplayState.AxisCalibrated;
     }
 
