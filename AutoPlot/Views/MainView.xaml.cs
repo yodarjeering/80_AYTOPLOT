@@ -4,6 +4,7 @@ using AutoPlot.Models;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using AutoPlot.Utils;
 
 namespace AutoPlot.Views
 {
@@ -72,6 +73,11 @@ namespace AutoPlot.Views
             _prevPoint = e.GetPosition(DrawCanvas);
 
             currentLine = new Polyline();
+            currentLine.Stroke = PlotColors.GetNoiseMaskBrush();
+            currentLine.StrokeThickness = 10;
+            currentLine.StrokeLineJoin = PenLineJoin.Round;
+            currentLine.StrokeStartLineCap = PenLineCap.Round;
+            currentLine.StrokeEndLineCap = PenLineCap.Round;
 
             var pos = e.GetPosition(DrawCanvas);
             currentLine.Points.Add(_prevPoint);

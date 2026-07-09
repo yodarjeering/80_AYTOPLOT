@@ -300,7 +300,7 @@ namespace AutoPlot.ViewModels
         private void UpdateNoiseOverlay()
         {
             using var display = _plotArea.Clone();
-            display.SetTo(PlotColors.NoiseMaskScalar, _noiseMask);
+            display.SetTo(PlotColors.GetNoiseMaskScalar(display), _noiseMask);
             InputBitmap = BitmapSourceConverter.ToBitmapSource(display);
         }
 

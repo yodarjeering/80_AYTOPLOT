@@ -3,7 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="軸キャリブレーション"
         SizeToContent="WidthAndHeight"
-        WindowStartupLocation="Manual">
+        WindowStartupLocation="Manual"
+        Background="{DynamicResource AppBackgroundBrush}"
+        Foreground="{DynamicResource AppTextBrush}">
 
     <Grid Margin="16" Background="{DynamicResource AppBackgroundBrush}">
         <Grid.RowDefinitions>

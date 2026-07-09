@@ -22,8 +22,9 @@ namespace AutoPlot.Utils
         public static Color GridLine { get; private set; } = Color.FromRgb(0xE5, 0xE7, 0xEB);
         public static Color AxisLine { get; private set; } = Color.FromRgb(0x37, 0x41, 0x51);
         public static Color LabelText { get; private set; } = Color.FromRgb(0x4B, 0x55, 0x63);
-        public static Color NoiseMask { get; private set; } = Color.FromRgb(0xE8, 0x64, 0x52);
-        public static Color RoiHighlight { get; private set; } = Color.FromRgb(0x5A, 0xD8, 0xA6);
+        public static Color NoiseMask { get; private set; } = Colors.White;
+        // public static Color RoiHighlight { get; private set; } = Color.FromRgb(0x5A, 0xD8, 0xA6);
+        public static Color RoiHighlight { get; private set; } = Colors.Red;
 
         public static void ApplyTheme(AppTheme theme)
         {
@@ -32,6 +33,7 @@ namespace AutoPlot.Utils
                 case AppTheme.Dark:
                     GraphBackground = Color.FromRgb(0x1B, 0x20, 0x2A);
                     GridLine = Color.FromRgb(0x38, 0x42, 0x52);
+                    // GridLine = Colors.Red;
                     AxisLine = Color.FromRgb(0xD8, 0xE2, 0xEE);
                     LabelText = Color.FromRgb(0xA8, 0xB3, 0xC2);
                     NoiseMask = Colors.White;
@@ -50,8 +52,9 @@ namespace AutoPlot.Utils
                     GridLine = Color.FromRgb(0xE5, 0xE7, 0xEB);
                     AxisLine = Color.FromRgb(0x37, 0x41, 0x51);
                     LabelText = Color.FromRgb(0x4B, 0x55, 0x63);
-                    NoiseMask = Color.FromRgb(0xE8, 0x64, 0x52);
+                    NoiseMask = Colors.White;
                     RoiHighlight = Color.FromRgb(0x5A, 0xD8, 0xA6);
+                    // RoiHighlight = Colors.Red;
                     break;
             }
         }
@@ -59,6 +62,13 @@ namespace AutoPlot.Utils
         public static Brush GetSeriesBrush(int index)
         {
             var brush = new SolidColorBrush(GetSeriesColor(index));
+            brush.Freeze();
+            return brush;
+        }
+
+        public static Brush GetNoiseMaskBrush()
+        {
+            var brush = new SolidColorBrush(NoiseMask);
             brush.Freeze();
             return brush;
         }
@@ -78,6 +88,13 @@ namespace AutoPlot.Utils
         public static Scalar AxisLineScalar => ToBgrScalar(AxisLine);
         public static Scalar LabelTextScalar => ToBgrScalar(LabelText);
         public static Scalar NoiseMaskScalar => ToBgrScalar(NoiseMask);
+        public static Scalar GetNoiseMaskScalar(Mat target)
+        {
+            return target.Channels() == 4
+                ? ToBgraScalar(NoiseMask)
+                : ToBgrScalar(NoiseMask);
+        }
+
         public static Scalar RoiHighlightScalar => ToBgrScalar(RoiHighlight);
 
         private static Color GetSeriesColor(int index)
@@ -93,6 +110,11 @@ namespace AutoPlot.Utils
         private static Scalar ToBgraScalar(Color color, byte alpha)
         {
             return new Scalar(color.B, color.G, color.R, alpha);
+        }
+
+        private static Scalar ToBgraScalar(Color color)
+        {
+            return ToBgraScalar(color, 255);
         }
     }
 }

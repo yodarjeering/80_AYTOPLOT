@@ -40,10 +40,6 @@
                 <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}"/>
             </Style>
 
-            <Style TargetType="TextBlock">
-                <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}"/>
-            </Style>
-
             <Style TargetType="GroupBox">
                 <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}"/>
                 <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}"/>
@@ -96,6 +92,17 @@
                 <Setter Property="Background" Value="{DynamicResource AppPrimaryBrush}"/>
                 <Setter Property="Foreground" Value="{DynamicResource AppButtonForegroundBrush}"/>
                 <Setter Property="BorderBrush" Value="{DynamicResource AppPrimaryBrush}"/>
+                <Setter Property="ContentTemplate">
+                    <Setter.Value>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}"
+                                       Foreground="{DynamicResource AppButtonForegroundBrush}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       TextAlignment="Center"/>
+                        </DataTemplate>
+                    </Setter.Value>
+                </Setter>
             </Style>
 
 
