@@ -1,3 +1,4 @@
+using AutoPlot.Utils;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using OpenCvSharp;
@@ -46,7 +47,7 @@ namespace AutoPlot.ViewModels
         private void UpdatePreview()
         {
             using var display = _plotArea.Clone();
-            display.SetTo(new Scalar(0, 0, 255), _noiseMask);
+            display.SetTo(PlotColors.GetNoiseMaskScalar(display), _noiseMask);
             PreviewImage = BitmapSourceConverter.ToBitmapSource(display);
         }
 
@@ -94,7 +95,10 @@ namespace AutoPlot.ViewModels
         public void Confirm()
         {
             ResultPlotArea = _plotArea.Clone();
-            ResultPlotArea.SetTo(new Scalar(255, 255, 255), _noiseMask);
+            var eraseColor = ResultPlotArea.Channels() == 4
+                ? new Scalar(255, 255, 255, 255)
+                : new Scalar(255, 255, 255);
+            ResultPlotArea.SetTo(eraseColor, _noiseMask);
             IsConfirmed = true;
         }
 

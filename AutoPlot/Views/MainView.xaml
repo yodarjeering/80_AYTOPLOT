@@ -10,7 +10,9 @@
     Title="AutoPlot"
     Height="600" Width="1150"
     KeyDown="Window_KeyDown"
-    Focusable="True">
+    Focusable="True"
+    Background="{DynamicResource AppBackgroundBrush}"
+    Foreground="{DynamicResource AppTextBrush}">
 
     <Window.DataContext>
         <vm:MainViewModel />
@@ -73,10 +75,10 @@
 
                 <!-- 原図 -->
                 <Border Grid.Column="0"
-                        BorderBrush="Gray"
+                        BorderBrush="{DynamicResource AppBorderBrush}"
                         BorderThickness="1"
                         Margin="0,0,5,0"
-                        Background="White">
+                        Background="{DynamicResource AppSurfaceBrush}">
                     <Grid>
                         <!-- 初期表示用テキスト -->
                         <Image x:Name="InputImageDisplay"
@@ -92,9 +94,9 @@
 
                 <!-- プロット -->
                 <Border Grid.Column="1"
-                        BorderBrush="Gray"
+                        BorderBrush="{DynamicResource AppBorderBrush}"
                         BorderThickness="1"
-                        Background="White">
+                        Background="{DynamicResource AppSurfaceBrush}">
 
                     <Grid>
                         <!-- グラフ画像 -->

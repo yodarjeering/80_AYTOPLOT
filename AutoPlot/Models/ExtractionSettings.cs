@@ -3,7 +3,7 @@ namespace AutoPlot.Models
     public class ExtractionSettings
     {
         public int MovingAverageWindow { get; set; } = 5;
-        public int CurveThreshold { get; set; } = 180;
+        public int CurveThreshold { get; set; } = 70;
         public int NoiseMaskThreshold { get; set; } = 180;
         public int TraceSearchBandWidth { get; set; } = 15;
         public int MinCurveLength { get; set; } = 20;

@@ -1,3 +1,4 @@
+using AutoPlot.Utils;
 using AutoPlot.ViewModels;
 using System.Windows;
 using System.Windows.Input;
@@ -8,18 +9,6 @@ namespace AutoPlot.Views
 {
     public partial class SeriesTraceWindow : Window
     {
-        private readonly Brush[] _seriesBrushes =
-        {
-            Brushes.Red,
-            Brushes.Blue,
-            Brushes.Green,
-            Brushes.Orange,
-            Brushes.Purple,
-            Brushes.Brown,
-            Brushes.DeepPink,
-            Brushes.Teal
-        };
-
         private bool _isDrawing;
         private Polyline? _currentLine;
 
@@ -167,7 +156,7 @@ namespace AutoPlot.Views
 
         private Brush GetSeriesBrush(int seriesIndex)
         {
-            return _seriesBrushes[seriesIndex % _seriesBrushes.Length];
+            return PlotColors.GetSeriesBrush(seriesIndex);
         }
     }
 }

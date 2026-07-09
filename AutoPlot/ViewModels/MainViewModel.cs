@@ -21,6 +21,7 @@ namespace AutoPlot.ViewModels
     public partial class MainViewModel : ObservableObject
     {
         private readonly ImageProcessingService _service = new();
+        private readonly AppSettings _appSettings = AppSettingsService.Load();
 
         // ===== Bindable =====
         [ObservableProperty] private string _imagePath = "";
@@ -98,6 +99,8 @@ namespace AutoPlot.ViewModels
 
         public MainViewModel()
         {
+            AppThemeManager.Apply(_appSettings.Theme);
+
             LoadImageCommand = new RelayCommand(OnLoadImage);
             AxisCalibrationCommand = new RelayCommand(OnAxisCalibration);
             ShowOriginalImageCommand = new RelayCommand(OnShowOriginalImage);
@@ -141,20 +144,20 @@ namespace AutoPlot.ViewModels
         // =========================================================
         private void OnAxisCalibration()
         {
-            if (_displayState == DisplayState.AxisCalibrated)
-                return;
+            bool canCalibrateAxis = _originalBitmap != null && _roi.Width > 0 && _roi.Height > 0;
 
-            if (_originalBitmap == null || _roi.Width <= 0 || _roi.Height <= 0)
-                return;
+            if (canCalibrateAxis)
+            {
+                using var src = OpenCvUtils.BitmapImageToMat(_originalBitmap);
+                using var highlighted = _service.CreateRoiHighlightImage(src, _roi);
 
-            using var src = OpenCvUtils.BitmapImageToMat(_originalBitmap);
-            using var highlighted = _service.CreateRoiHighlightImage(src, _roi);
-
-            InputBitmap = BitmapSourceConverter.ToBitmapSource(highlighted);
-            ResultText = "軸キャリブレーション表示中";
+                InputBitmap = BitmapSourceConverter.ToBitmapSource(highlighted);
+                ResultText = "軸キャリブレーション表示中";
+            }
 
             var vm = new AxisCalibrationDialogViewModel
             {
+                SelectedTheme = _appSettings.Theme,
                 XMin = _axisSettings.XMin,
                 XMax = _axisSettings.XMax,
                 IsXLog = _axisSettings.IsXLog,
@@ -175,6 +178,16 @@ namespace AutoPlot.ViewModels
 
             if (dialog.ShowDialog() != true)
                 return;
+
+            _appSettings.Theme = vm.SelectedTheme;
+            AppSettingsService.Save(_appSettings);
+            AppThemeManager.Apply(vm.SelectedTheme);
+
+            if (!canCalibrateAxis)
+            {
+                ResultText = "Settings updated";
+                return;
+            }
 
             ApplyAxisCalibration(vm);
         }
@@ -287,7 +300,7 @@ namespace AutoPlot.ViewModels
         private void UpdateNoiseOverlay()
         {
             using var display = _plotArea.Clone();
-            display.SetTo(new Scalar(0, 0, 255), _noiseMask);
+            display.SetTo(PlotColors.GetNoiseMaskScalar(display), _noiseMask);
             InputBitmap = BitmapSourceConverter.ToBitmapSource(display);
         }
 
@@ -370,18 +383,6 @@ namespace AutoPlot.ViewModels
 
         private void DrawDetectedPixelSeriesOnImage(Mat baseImg)
         {
-            Scalar[] colors =
-            {
-                new Scalar(0, 0, 255),
-                new Scalar(255, 0, 0),
-                new Scalar(0, 160, 0),
-                new Scalar(0, 165, 255),
-                new Scalar(128, 0, 128),
-                new Scalar(42, 42, 165),
-                new Scalar(147, 20, 255),
-                new Scalar(128, 128, 0)
-            };
-
             for (int seriesIndex = 0; seriesIndex < _detectedPixelSeries.Count; seriesIndex++)
             {
                 var series = _detectedPixelSeries[seriesIndex];
@@ -391,7 +392,7 @@ namespace AutoPlot.ViewModels
                         baseImg,
                         ToWorkingImagePoint(series[i - 1]),
                         ToWorkingImagePoint(series[i]),
-                        colors[seriesIndex % colors.Length],
+                        PlotColors.GetSeriesScalar(seriesIndex),
                         2,
                         LineTypes.AntiAlias);
                 }
@@ -415,7 +416,7 @@ namespace AutoPlot.ViewModels
                     baseImg,
                     p1.Value,
                     p2.Value,
-                    new Scalar(0, 0, 255),
+                    PlotColors.GetSeriesScalar(0),
                     2,
                     LineTypes.AntiAlias);
             }
@@ -578,10 +579,21 @@ namespace AutoPlot.ViewModels
                 ExtractionSettings
             );
 
-            _rawTraceSeries.Clear();
-            _detectedPixelSeries.Clear();
-            _detectedSeries.Clear();
             _hasNoiseRemovalApplied = true;
+
+            if (_rawTraceSeries.Count > 0)
+            {
+                _detectedSeries = DetectSeriesFromTraceGuides(_rawTraceSeries);
+                ResultText = _detectedSeries.Count > 0
+                    ? $"{_detectedSeries.Count} detected series from trace guide(s) after noise removal"
+                    : "No curve pixels were found near the traced guide(s) after noise removal.";
+            }
+            else
+            {
+                _detectedPixelSeries.Clear();
+                _detectedSeries.Clear();
+            }
+
             _displayState = DisplayState.AxisCalibrated;
     }
 
