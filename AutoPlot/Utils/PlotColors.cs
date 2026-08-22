@@ -40,12 +40,12 @@ namespace AutoPlot.Utils
                     RoiHighlight = Color.FromRgb(0x5A, 0xD8, 0xA6);
                     break;
                 case AppTheme.ChocoMint:
-                    GraphBackground = Color.FromRgb(0xFF, 0xFF, 0xFC);
-                    GridLine = Color.FromRgb(0xD6, 0xEE, 0xE5);
-                    AxisLine = Color.FromRgb(0x4E, 0x36, 0x2E);
-                    LabelText = Color.FromRgb(0x68, 0x5B, 0x55);
+                    GraphBackground = Color.FromRgb(0xB8, 0xF0, 0xE2);
+                    GridLine = Color.FromRgb(0x78, 0xC8, 0xB4);
+                    AxisLine = Color.FromRgb(0x58, 0x25, 0x0B);
+                    LabelText = Color.FromRgb(0x49, 0x1D, 0x08);
                     NoiseMask = Color.FromRgb(0xD9, 0x68, 0x62);
-                    RoiHighlight = Color.FromRgb(0x55, 0xC7, 0xA7);
+                    RoiHighlight = Color.FromRgb(0xC4, 0x41, 0x32);
                     break;
                 default:
                     GraphBackground = Color.FromRgb(0xFA, 0xFA, 0xFA);

@@ -2,6 +2,7 @@ using AutoPlot.Models;
 using AutoPlot.Services;
 using AutoPlot.Utils;
 using AutoPlot.Views;
+using AutoPlot.ImageProcessing;
 using AutoPlot.ImageProcessing.Helpers;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -31,6 +32,11 @@ namespace AutoPlot.ViewModels
         [ObservableProperty] private int _seriesCount = 1;
         [ObservableProperty] private int _currentSeriesIndex = 0;
         [ObservableProperty] private bool _isSeriesTraceMode = false;
+        [ObservableProperty] private bool _isAxisDialogButtonEnabled = true;
+        [ObservableProperty] private bool _isTraceDialogButtonEnabled = true;
+        [ObservableProperty] private bool _isNoiseDialogButtonEnabled = true;
+        [ObservableProperty] private bool _isExtractionDialogButtonEnabled = true;
+        [ObservableProperty] private bool _isCopyDialogButtonEnabled = true;
 
         // ===== Image =====
         private BitmapSource _inputBitmap;
@@ -54,6 +60,7 @@ namespace AutoPlot.ViewModels
         private List<List<System.Windows.Point>> _rawTraceSeries = new();
         private List<List<System.Windows.Point>> _detectedPixelSeries = new();
         private List<List<ImagePoint>> _detectedSeries = new();
+        private bool _hasAutoDetectedSeries;
 
         public BitmapSource GraphBitmap
         {
@@ -95,6 +102,7 @@ namespace AutoPlot.ViewModels
         //public IRelayCommand StartSeriesTraceCommand { get; }
         public IRelayCommand ShowNoiseRemovalWindowCommand { get; } // <- 14 追加
         public IRelayCommand ShowSeriesTraceWindowCommand { get; }
+        public IAsyncRelayCommand AutoDetectSeriesCommand { get; }
 
 
         public MainViewModel()
@@ -107,6 +115,7 @@ namespace AutoPlot.ViewModels
             NoiseRemovalCommand = new RelayCommand(OnNoiseRemoval);
             ShowNoiseRemovalWindowCommand = new RelayCommand(OnShowNoiseRemovalWindow); // <- 14追加
             ShowSeriesTraceWindowCommand = new RelayCommand(OnShowSeriesTraceWindow);
+            AutoDetectSeriesCommand = new AsyncRelayCommand(OnAutoDetectSeriesAsync);
             ExtractionSettingsCommand = new RelayCommand(OnExtractionSettings);
             OnShowUpdateGraphCommand = new RelayCommand(OnShowUpdateGraph);
             CopyCurveDataCommand = new RelayCommand(OnCopyCurveData);
@@ -126,6 +135,7 @@ namespace AutoPlot.ViewModels
             _rawTraceSeries.Clear();
             _detectedPixelSeries.Clear();
             _detectedSeries.Clear();
+            _hasAutoDetectedSeries = false;
             _hasNoiseRemovalApplied = false;
             _originalBitmap = OpenCvUtils.LoadBitmap(ImagePath);
             InputBitmap = _originalBitmap;
@@ -176,7 +186,7 @@ namespace AutoPlot.ViewModels
                 Top = Application.Current.MainWindow.Top + 50
             };
 
-            if (dialog.ShowDialog() != true)
+            if (ShowDialogWithButtonState(dialog, value => IsAxisDialogButtonEnabled = value) != true)
                 return;
 
             _appSettings.Theme = vm.SelectedTheme;
@@ -203,6 +213,7 @@ namespace AutoPlot.ViewModels
             _rawTraceSeries.Clear();
             _detectedPixelSeries.Clear();
             _detectedSeries.Clear();
+            _hasAutoDetectedSeries = false;
 
             _plotArea?.Dispose();
             _plotArea = new Mat(_workingImage, _roi).Clone();
@@ -240,7 +251,7 @@ namespace AutoPlot.ViewModels
                 WindowStartupLocation = WindowStartupLocation.CenterOwner
             };
 
-            if (dialog.ShowDialog() != true)
+            if (ShowDialogWithButtonState(dialog, value => IsExtractionDialogButtonEnabled = value) != true)
                 return;
 
             ExtractionSettings = vm.ToSettings();
@@ -502,10 +513,11 @@ namespace AutoPlot.ViewModels
                 WindowStartupLocation = WindowStartupLocation.CenterOwner
             };
 
-            bool? result = window.ShowDialog();
+            bool? result = ShowDialogWithButtonState(window, value => IsTraceDialogButtonEnabled = value);
             if (result == true && vm.IsConfirmed)
             {
                 _rawTraceSeries = vm.ResultSeries.Select(series => series.ToList()).ToList();
+                _hasAutoDetectedSeries = false;
                 _detectedSeries = DetectSeriesFromTraceGuides(_rawTraceSeries);
 
                 if (_detectedSeries.Count == 0)
@@ -530,6 +542,58 @@ namespace AutoPlot.ViewModels
             }
         }
 
+        private async Task OnAutoDetectSeriesAsync()
+        {
+            if (_plotArea == null || _workingImage == null || CurveData == null)
+            {
+                MessageBox.Show("先に画像読込と軸設定を完了してください。");
+                return;
+            }
+
+            ResultText = "曲線候補を自動検出しています…";
+            using var plotSnapshot = _plotArea.Clone();
+            var settingsSnapshot = new ExtractionSettings(ExtractionSettings);
+
+            List<List<System.Windows.Point>> detectedPixels = await Task.Run(
+                () => AutoSeriesDetector.Detect(plotSnapshot, settingsSnapshot));
+
+            if (detectedPixels.Count == 0)
+            {
+                ResultText = "曲線候補を検出できませんでした。手動トレースまたは抽出設定を調整してください。";
+                return;
+            }
+
+            using var reviewVm = new AutoSeriesReviewViewModel(plotSnapshot, detectedPixels);
+            var reviewWindow = new AutoSeriesReviewWindow
+            {
+                DataContext = reviewVm,
+                Owner = Application.Current.MainWindow,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+
+            if (reviewWindow.ShowDialog() != true)
+            {
+                ResultText = "自動検出結果の変更をキャンセルしました。";
+                return;
+            }
+
+            detectedPixels = reviewVm.ConfirmSelection();
+            _rawTraceSeries.Clear();
+            _detectedPixelSeries = detectedPixels;
+            _detectedSeries = detectedPixels
+                .Select(series => ConvertPixelSeriesToRealPoints(
+                    series,
+                    plotSnapshot.Width,
+                    plotSnapshot.Height))
+                .Where(series => series.Count > 0)
+                .ToList();
+            _hasAutoDetectedSeries = _detectedSeries.Count > 0;
+
+            ResultText = $"自動検出: {_detectedSeries.Count} 系列を採用";
+            _displayState = DisplayState.GraphPlot;
+            UpdateDisplayWithOverlay(CurveData);
+        }
+
         // 14追加
         private void OnShowNoiseRemovalWindow()
         {
@@ -548,7 +612,7 @@ namespace AutoPlot.ViewModels
                 WindowStartupLocation = WindowStartupLocation.CenterOwner
             };
 
-            bool? result = window.ShowDialog();
+            bool? result = ShowDialogWithButtonState(window, value => IsNoiseDialogButtonEnabled = value);
             if (result != true || !vm.IsConfirmed || vm.ResultPlotArea == null)
                 return;
 
@@ -581,7 +645,14 @@ namespace AutoPlot.ViewModels
 
             _hasNoiseRemovalApplied = true;
 
-            if (_rawTraceSeries.Count > 0)
+            if (_hasAutoDetectedSeries)
+            {
+                RedetectAutomaticSeries();
+                ResultText = _detectedSeries.Count > 0
+                    ? $"自動検出: {_detectedSeries.Count} 系列（ノイズ除去後）"
+                    : "ノイズ除去後に曲線候補を検出できませんでした。";
+            }
+            else if (_rawTraceSeries.Count > 0)
             {
                 _detectedSeries = DetectSeriesFromTraceGuides(_rawTraceSeries);
                 ResultText = _detectedSeries.Count > 0
@@ -627,7 +698,9 @@ namespace AutoPlot.ViewModels
 
             CurveData = RunCurrentPlotExtraction();
 
-            if (_rawTraceSeries.Count > 0)
+            if (_hasAutoDetectedSeries)
+                RedetectAutomaticSeries();
+            else if (_rawTraceSeries.Count > 0)
                 _detectedSeries = DetectSeriesFromTraceGuides(_rawTraceSeries);
 
             if (_displayState == DisplayState.GraphPlot)
@@ -710,6 +783,64 @@ namespace AutoPlot.ViewModels
             }
 
             return detectedSeries;
+        }
+
+        private void RedetectAutomaticSeries()
+        {
+            List<List<System.Windows.Point>> previouslySelected = _detectedPixelSeries
+                .Select(series => series.ToList())
+                .ToList();
+            List<List<System.Windows.Point>> redetected = AutoSeriesDetector.Detect(_plotArea, ExtractionSettings);
+
+            // Automatic re-detection after changing extraction settings or applying
+            // a noise mask must not restore candidates that the user unchecked in
+            // the review dialog. Keep only paths that still correspond to a
+            // previously accepted series.
+            _detectedPixelSeries = previouslySelected.Count == 0
+                ? redetected
+                : redetected
+                    .Where(candidate => previouslySelected.Any(selected =>
+                        IsSameDetectedSeries(selected, candidate, ExtractionSettings.TraceSearchBandWidth)))
+                    .ToList();
+            _detectedSeries = _detectedPixelSeries
+                .Select(series => ConvertPixelSeriesToRealPoints(
+                    series,
+                    _plotArea.Width,
+                    _plotArea.Height))
+                .Where(series => series.Count > 0)
+                .ToList();
+            _hasAutoDetectedSeries = _detectedSeries.Count > 0;
+        }
+
+        private static bool IsSameDetectedSeries(
+            List<System.Windows.Point> selected,
+            List<System.Windows.Point> candidate,
+            int searchBandWidth)
+        {
+            if (selected.Count == 0 || candidate.Count == 0)
+                return false;
+
+            var selectedByX = selected.ToDictionary(
+                point => (int)Math.Round(point.X),
+                point => point.Y);
+            int overlap = 0;
+            double totalDistance = 0;
+
+            foreach (System.Windows.Point point in candidate)
+            {
+                if (!selectedByX.TryGetValue((int)Math.Round(point.X), out double selectedY))
+                    continue;
+
+                overlap++;
+                totalDistance += Math.Abs(point.Y - selectedY);
+            }
+
+            int requiredOverlap = Math.Max(10, (int)(Math.Min(selected.Count, candidate.Count) * 0.35));
+            if (overlap < requiredOverlap)
+                return false;
+
+            double allowedAverageDistance = Math.Clamp(searchBandWidth / 2.0, 3.0, 8.0);
+            return totalDistance / overlap <= allowedAverageDistance;
         }
 
         private static List<System.Windows.Point> DetectPixelSeriesNearGuide(
@@ -1053,7 +1184,20 @@ namespace AutoPlot.ViewModels
                 Owner = Application.Current.MainWindow
             };
 
-            dialog.ShowDialog();
+            ShowDialogWithButtonState(dialog, value => IsCopyDialogButtonEnabled = value);
+        }
+
+        private static bool? ShowDialogWithButtonState(System.Windows.Window dialog, Action<bool> setButtonEnabled)
+        {
+            setButtonEnabled(false);
+            try
+            {
+                return dialog.ShowDialog();
+            }
+            finally
+            {
+                setButtonEnabled(true);
+            }
         }
 
         public async void LoadImageFromClipboard(BitmapSource bitmap)
@@ -1072,6 +1216,7 @@ namespace AutoPlot.ViewModels
             _rawTraceSeries.Clear();
             _detectedPixelSeries.Clear();
             _detectedSeries.Clear();
+            _hasAutoDetectedSeries = false;
             _hasNoiseRemovalApplied = false;
             Mat inputImage = OpenCvUtils.BitmapImageToMat(InputBitmap);
 

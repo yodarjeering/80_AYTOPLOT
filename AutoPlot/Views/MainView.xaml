@@ -32,20 +32,30 @@
                 <TextBlock Text="Menu" FontWeight="Bold" FontSize="15" Margin="0,0,0,10"/>
 
                 <Button Content="Settings"
-                        Style="{StaticResource MainMenuButtonStyle}" 
+                        Style="{StaticResource MainMenuButtonStyle}"
+                        IsEnabled="{Binding IsAxisDialogButtonEnabled}"
                         Command="{Binding AxisCalibrationCommand}" />
+
+
+                <Button
+                    Content="Auto Detect"
+                    ToolTip="色に依存せず、線の連続性から複数曲線を検出します"
+                    Style="{StaticResource MainMenuButtonStyle}"
+                    Command="{Binding AutoDetectSeriesCommand}"/>
+                <Button Content="Noise removal"
+                        Style="{StaticResource MainMenuButtonStyle}"
+                        IsEnabled="{Binding IsNoiseDialogButtonEnabled}"
+                        Command="{Binding ShowNoiseRemovalWindowCommand}" Click="Button_Click" />
 
                 <Button
                     Content="Trace Series"
                     Style="{StaticResource MainMenuButtonStyle}"
+                    IsEnabled="{Binding IsTraceDialogButtonEnabled}"
                     Command="{Binding ShowSeriesTraceWindowCommand}"/>
-
-                <Button Content="Noise removal"
-                        Style="{StaticResource MainMenuButtonStyle}"
-                        Command="{Binding ShowNoiseRemovalWindowCommand}" Click="Button_Click" />        
 
                 <Button Content="Extraction Settings"
                         Style="{StaticResource MainMenuButtonStyle}"
+                        IsEnabled="{Binding IsExtractionDialogButtonEnabled}"
                         Command="{Binding ExtractionSettingsCommand}" />
                 
                 <Button Content="Show graph"
@@ -58,6 +68,7 @@
                 
                 <Button Content="Copy data"
                         Command="{Binding CopyCurveDataCommand}"
+                        IsEnabled="{Binding IsCopyDialogButtonEnabled}"
                         Style="{StaticResource MainMenuButtonStyle}" />
                         
             </StackPanel>

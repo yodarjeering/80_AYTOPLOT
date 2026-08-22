@@ -1,10 +1,29 @@
-<mxfile host="app.diagrams.net">
-  <diagram name="ページ-1" id="PkmUTtpc9YGfUdxxoqTi">
-    <mxGraphModel dx="1290" dy="752" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="#E6E6E6" math="0" shadow="0">
-      <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-      </root>
-    </mxGraphModel>
-  </diagram>
+<mxfile host="app.diagrams.net" modified="2026-08-22T00:00:00.000Z" agent="Codex" version="24.7.17">
+ <diagram id="AutoPlotArchitecture" name="AutoPlot Architecture">
+  <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+   <root>
+    <mxCell id="0"/><mxCell id="1" parent="0"/>
+    <mxCell id="ui" value="WPF Views&#xa;Main / Axis / Extraction&#xa;Noise / Trace / Review / Copy" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="40" y="250" width="250" height="170" as="geometry"/></mxCell>
+    <mxCell id="mainvm" value="MainViewModel&#xa;Workflow / State / Commands&#xa;Selected Series / Conversion" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="360" y="250" width="280" height="170" as="geometry"/></mxCell>
+    <mxCell id="dialogvm" value="Dialog ViewModels&#xa;Axis / Extraction / Noise&#xa;Trace / Review / Copy" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="360" y="510" width="280" height="130" as="geometry"/></mxCell>
+    <mxCell id="service" value="ImageProcessingService&#xa;Processing Facade" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="720" y="70" width="230" height="100" as="geometry"/></mxCell>
+    <mxCell id="processor" value="ImageProcessor&#xa;ROI / Grid Removal&#xa;Base Curve Extraction" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1"><mxGeometry x="1030" y="55" width="250" height="130" as="geometry"/></mxCell>
+    <mxCell id="auto" value="AutoSeriesDetector&#xa;Ink Mask / Column Candidates&#xa;Tracking / Fragment Merge&#xa;Quality Filter (max 16)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="720" y="240" width="260" height="180" as="geometry"/></mxCell>
+    <mxCell id="utils" value="OpenCvUtils / PixelConverter&#xa;Graph Rendering / Nice Ticks&#xa;Linear &amp; Log Conversion" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="720" y="500" width="260" height="140" as="geometry"/></mxCell>
+    <mxCell id="models" value="Models&#xa;Axis / Extraction / CurveData&#xa;ImagePoint / DisplayState" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="1030" y="270" width="250" height="140" as="geometry"/></mxCell>
+    <mxCell id="theme" value="Theme &amp; Colors&#xa;AppThemeManager / PlotColors&#xa;3 Themes / 16 Series Colors" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0cee2;strokeColor=#56517e;" vertex="1" parent="1"><mxGeometry x="1030" y="500" width="250" height="140" as="geometry"/></mxCell>
+    <mxCell id="external" value="WPF / CommunityToolkit.Mvvm / OpenCvSharp / MathNet.Numerics" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;dashed=1;" vertex="1" parent="1"><mxGeometry x="720" y="730" width="560" height="80" as="geometry"/></mxCell>
+    <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="ui" target="mainvm"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="ui" target="dialogvm"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="mainvm" target="service"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="service" target="processor"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="mainvm" target="auto"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="mainvm" target="utils"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="mainvm" target="models"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;" edge="1" parent="1" source="mainvm" target="theme"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;dashed=1;" edge="1" parent="1" source="processor" target="external"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;dashed=1;" edge="1" parent="1" source="auto" target="external"><mxGeometry relative="1" as="geometry"/></mxCell>
+   </root>
+  </mxGraphModel>
+ </diagram>
 </mxfile>

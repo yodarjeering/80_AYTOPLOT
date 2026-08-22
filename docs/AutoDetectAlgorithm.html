@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AutoPlot Auto Detect アルゴリズム詳細</title>
+  <style>
+    :root{--ink:#17212b;--sub:#526170;--line:#d4dee7;--a:#006d77;--b:#6c3fa0;--panel:#f6fafb;}
+    *{box-sizing:border-box} body{margin:0;font-family:"Segoe UI","Yu Gothic UI",sans-serif;color:var(--ink);line-height:1.72}
+    header{padding:42px max(24px,calc((100vw - 1080px)/2));color:#fff;background:linear-gradient(120deg,#005d66,#713d8f)}
+    header h1{margin:0 0 8px} header p{margin:0;opacity:.9} main{max-width:1080px;margin:auto;padding:28px 24px 70px}
+    nav{position:sticky;top:0;padding:10px 14px;background:#fffffff2;border:1px solid var(--line);border-radius:8px;backdrop-filter:blur(8px)}
+    nav a{margin-right:17px;color:var(--a)} h2{margin-top:42px;border-bottom:2px solid var(--a);padding-bottom:6px}
+    h3{color:var(--b);margin-top:27px} code{font-family:Consolas,monospace;background:#edf2f5;padding:2px 5px;border-radius:4px}
+    pre{padding:18px;overflow:auto;border-radius:9px;background:#112b36;color:#dcf8f2;line-height:1.5}
+    table{width:100%;border-collapse:collapse;margin:14px 0 24px} th,td{padding:10px 12px;border:1px solid var(--line);vertical-align:top;text-align:left} th{background:#e8f4f4}
+    .formula{padding:14px 18px;border-left:4px solid var(--b);background:#f6f0fb;font-family:Cambria,serif;font-size:1.06rem}
+    .note{padding:13px 16px;border-left:4px solid #db9500;background:#fff8e3}.good{border-left-color:#16835f;background:#eaf8f2}
+    .pipeline{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.step{padding:14px;border:1px solid var(--line);border-radius:9px;background:var(--panel)}
+    .step b{display:block;color:var(--a)} footer{margin-top:50px;color:var(--sub);font-size:.9rem}
+  </style>
+</head>
+<body>
+<header><h1>Auto Detect 検出アルゴリズム詳細</h1><p>色だけに依存せず、幾何形状・連続性・傾きから最大16曲線を軽量追跡する仕組み</p></header>
+<main>
+  <nav><a href="#goal">目的</a><a href="#pipeline">処理工程</a><a href="#tracking">追跡</a><a href="#merge">再結合</a><a href="#filter">選別</a><a href="#review">レビュー</a><a href="#limits">制約</a></nav>
+
+  <section id="goal"><h2>1. 目的と設計方針</h2>
+    <p><code>AutoSeriesDetector</code>は、ROIへ切り出されたグラフ画像から複数の系列を自動検出します。カラー曲線だけでなく、すべて黒線・同色曲線でも動作させるため、<strong>色は候補画素を漏らさないための補助</strong>とし、系列の同一性は位置・傾き・連続性で判断します。</p>
+    <table><thead><tr><th>方針</th><th>理由</th></tr></thead><tbody>
+      <tr><td>学習モデルを使わない</td><td>EXEサイズ、起動時間、推論時間を増やさず、既存OpenCvSharpだけで配布する。</td></tr>
+      <tr><td>列方向に走査する</td><td>一般的な特性グラフをY=f(X)として扱い、2次元全探索を列候補の追跡へ縮約する。</td></tr>
+      <tr><td>人が最終選択する</td><td>文字、凡例、交差、完全重複など画像だけでは一意に決められないケースを安全に扱う。</td></tr>
+    </tbody></table>
+  </section>
+
+  <section id="pipeline"><h2>2. 全処理パイプライン</h2>
+    <div class="pipeline">
+      <div class="step"><b>1. BGR正規化</b>Gray/BGRA/BGR入力を3ch BGRへ統一</div>
+      <div class="step"><b>2. インクマスク</b>暗色画素と有彩色画素のOR</div>
+      <div class="step"><b>3. 長線除去</b>画像の65%以上を横断するグリッド候補を除去</div>
+      <div class="step"><b>4. 枠除去</b>外周最大3pxを候補外にする</div>
+      <div class="step"><b>5. 列候補化</b>各X列の連続画素を中心Yへ圧縮</div>
+      <div class="step"><b>6. 複数追跡</b>位置と傾き予測で候補を接続</div>
+      <div class="step"><b>7. 断片再結合</b>欠損前後の位置・傾きが一致する区間を連結</div>
+      <div class="step"><b>8. 品質フィルタ</b>長さ、密度、重複を評価</div>
+      <div class="step"><b>9. 平滑化</b>1-2-1重みでYを平滑化</div>
+      <div class="step"><b>10. レビュー</b>ユーザーが採用系列だけ確定</div>
+    </div>
+  </section>
+
+  <section><h2>3. インク画素の抽出</h2>
+    <h3>3.1 暗色マスク</h3><p>BGRをGrayへ変換し、<code>CurveThreshold</code>以下を前景とする反転二値化を行います。</p>
+    <div class="formula">dark(x,y) = 1 if Gray(x,y) ≤ CurveThreshold, otherwise 0</div>
+    <h3>3.2 有彩色マスク</h3><p>HSV空間で彩度が45より大きく、明度が250未満の画素を拾います。黒線は暗色マスク、比較的明るいカラー線は有彩色マスクで取得できます。</p>
+    <div class="formula">colored(x,y) = 1 if 0≤H≤179, 45≤S≤255, 0≤V≤249</div>
+    <p>最終候補は <code>ink = dark OR colored</code> です。色相による系列分離は行いません。</p>
+
+    <h3>3.3 グリッドと枠</h3>
+    <p>幅の65%以上の水平カーネル、高さの65%以上の垂直カーネルでMorphological Openを行い、長い直線だけを抽出してinkから減算します。短いカーネルを使わないのは、水平に飽和した特性曲線をグリッドとして消さないためです。</p>
+    <p class="note">曲線がグリッドと完全に重なる区間は、グリッド除去によって一時的に欠損する可能性があります。そのため後段に欠損許容と断片再結合があります。</p>
+  </section>
+
+  <section id="tracking"><h2>4. 列候補と複数トラック</h2>
+    <h3>4.1 列候補の中心</h3>
+    <p>各X列で連続している前景区間 <code>[yStart, yEnd]</code> を1候補へまとめます。太線を複数点として扱わず中心線に近づけます。</p>
+    <div class="formula">candidateY = (yStart + yEnd) / 2</div>
+
+    <h3>4.2 次位置の予測</h3>
+    <p>既存トラックは最後のY、推定傾き、連続欠損列数から次のYを予測します。</p>
+    <div class="formula">predictedY = lastY + slope × (missedColumns + 1)</div>
+    <p>候補のうち予測Yに最も近く、許容距離以内の点を接続します。候補がなければ欠損列数を増やし、6列を超えたトラックは通常追跡を終了します。</p>
+    <div class="formula">allowedDistance = maxJump + 1.5 × missedColumns<br>maxJump = clamp(TraceSearchBandWidth / 3, 3, 8)</div>
+    <p>手動トレース用の探索幅をそのまま使わず最大8pxに制限することで、欠損時に隣の曲線へ吸着する誤接続を抑えています。</p>
+
+    <h3>4.3 傾きの更新</h3>
+    <p>新しい点を接続したとき、瞬間傾きへ完全に置き換えず指数移動平均で更新します。</p>
+    <div class="formula">measuredSlope = (newY − previousY) / Δx<br>slopeNew = 0.7 × slopeOld + 0.3 × measuredSlope</div>
+    <p>初回の接続だけは測定傾きをそのまま採用します。複数のトラックが交差点の同じ候補を一時共有できるため、交差後は各自の傾き予測で分岐できます。</p>
+  </section>
+
+  <section id="merge"><h2>5. 欠損区間の再結合</h2>
+    <p>グリッドとの重なりなどで1曲線が前半・後半に分断された場合、終了トラックから後続トラックの先頭を予測します。</p>
+    <div class="formula">predictedStartY = first.lastY + first.endSlope × (gap + 1)<br>yError = |second.firstY − predictedStartY|<br>slopeError = |second.startSlope − first.endSlope|</div>
+    <p>候補間隔は最大 <code>max(12px, imageWidth×0.12)</code>。Y誤差と傾き誤差が制限内なら、次のスコアが最小の後続断片を結合します。</p>
+    <div class="formula">mergeScore = yError + 8 × slopeError + 0.02 × gap</div>
+    <p>傾き誤差は0.55以下、Y許容誤差は概ね5〜12px相当（maxJumpにより上限）です。これにより、同じ高さで再出現する曲線は結び、下側の別曲線へ急落する接続は避けます。</p>
+  </section>
+
+  <section id="filter"><h2>6. 品質フィルタと平滑化</h2>
+    <table><thead><tr><th>判定</th><th>条件</th><th>目的</th></tr></thead><tbody>
+      <tr><td>水平スパン</td><td>max(MinCurveLength, imageWidth×20%)以上</td><td>文字、短い凡例線、点ノイズを除く。</td></tr>
+      <tr><td>点密度</td><td>pointCount ≥ horizontalSpan×45%</td><td>疎すぎる断片を除く。点線や小欠損は許容する。</td></tr>
+      <tr><td>重複</td><td>短い方の60%以上でXが重なり、その80%以上がY差2.5px以内</td><td>太線や交差共有で生じたほぼ同一トラックを1本にする。</td></tr>
+      <tr><td>最大数</td><td>16系列</td><td>UI色パレットと計算量を制限する。</td></tr>
+    </tbody></table>
+    <p>採用前に1-2-1の重み付き3点平滑化を行います。</p>
+    <div class="formula">y′[i] = (y[i−1] + 2y[i] + y[i+1]) / 4</div>
+    <p>最後に平均Yの小さい順、すなわち画面上側から並べます。</p>
+  </section>
+
+  <section id="review"><h2>7. レビュー、実座標化、選択維持</h2>
+    <ol>
+      <li>候補を16色パレットでROI画像へ重ねる。</li>
+      <li>ユーザーがチェックを外した候補は灰色表示にする。</li>
+      <li>OK後、選択系列だけを<code>_detectedPixelSeries</code>へ保存する。</li>
+      <li><code>PixelConverter</code>で線形/対数軸の実値へ変換する。</li>
+      <li>Extraction Settings変更やノイズ除去で再検出した場合、以前の選択系列とX重複・平均Y距離を比較し、対応する系列だけを残す。</li>
+    </ol>
+    <p class="note good">再検出で未選択系列が復活しないよう、重複が短い方の35%以上かつ平均Y距離が設定幅から算出した3〜8px以内の系列だけを以前の選択と同一とみなします。</p>
+  </section>
+
+  <section><h2>8. 計算量と配布サイズ</h2>
+    <p>画像幅W、高さHに対し、マスク生成と列候補抽出は概ねO(W×H)。追跡は各列の候補数とアクティブトラック数に比例します。ニューラルネットワークや追加ランタイムはなく、既存OpenCvSharpを利用するためAuto Detect追加による大きな配布サイズ増加はありません。</p>
+  </section>
+
+  <section id="limits"><h2>9. 想定制約と改善余地</h2>
+    <table><thead><tr><th>ケース</th><th>現在の挙動</th><th>将来案</th></tr></thead><tbody>
+      <tr><td>完全に重なる同一線種</td><td>画像上は1本なので本数を確定できない。</td><td>凡例・前後区間・ユーザー指定本数を補助情報にする。</td></tr>
+      <tr><td>垂直に近い曲線</td><td>Y=f(X)の列追跡では1列に複数Yが入り不利。</td><td>骨格グラフ探索または走査方向の自動切替。</td></tr>
+      <tr><td>文字が長く連なる</td><td>長さ条件を超えると候補になる場合がある。</td><td>OCRなしの文字形状フィルタ、凡例領域指定。</td></tr>
+      <tr><td>複雑な交差・分岐</td><td>傾きの滑らかさを優先するが一意でない。</td><td>交差点接続パターンの手動切替UI。</td></tr>
+      <tr><td>大きく途切れた点線</td><td>12%を超える欠損は別系列になる。</td><td>線種周期推定とユーザーによる結合操作。</td></tr>
+    </tbody></table>
+  </section>
+  <footer>Implementation reference: AutoPlot/ImageProcessing/AutoSeriesDetector.cs and MainViewModel.cs.</footer>
+</main>
+</body></html>
