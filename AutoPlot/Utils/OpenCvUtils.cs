@@ -229,10 +229,7 @@ namespace AutoPlot.Utils
         {
             if (!isLog)
             {
-                return Enumerable
-                    .Range(0, GraphGridDivisions + 1)
-                    .Select(i => min + (max - min) * i / GraphGridDivisions)
-                    .ToList();
+                return BuildLinearAxisTicks(min, max);
             }
 
             if (min <= 0 || max <= 0)
@@ -254,6 +251,56 @@ namespace AutoPlot.Utils
                 .Distinct()
                 .OrderBy(v => v)
                 .ToList();
+        }
+
+        private static List<double> BuildLinearAxisTicks(double min, double max)
+        {
+            if (double.IsNaN(min) || double.IsNaN(max) ||
+                double.IsInfinity(min) || double.IsInfinity(max) ||
+                max <= min)
+            {
+                return new List<double> { min, max };
+            }
+
+            double step = CalculateNiceTickStep((max - min) / GraphGridDivisions);
+            double epsilon = step * 1e-9;
+            double firstMultiple = Math.Ceiling((min - epsilon) / step) * step;
+            double lastMultiple = Math.Floor((max + epsilon) / step) * step;
+            var ticks = new List<double> { min };
+
+            for (double tick = firstMultiple; tick <= lastMultiple + epsilon; tick += step)
+            {
+                if (tick > min + epsilon && tick < max - epsilon)
+                    ticks.Add(NormalizeTickValue(tick, step));
+            }
+
+            ticks.Add(max);
+            return ticks;
+        }
+
+        private static double CalculateNiceTickStep(double rawStep)
+        {
+            if (rawStep <= 0 || double.IsNaN(rawStep) || double.IsInfinity(rawStep))
+                return 1;
+
+            double magnitude = Math.Pow(10, Math.Floor(Math.Log10(rawStep)));
+            double normalized = rawStep / magnitude;
+            double niceNormalized = normalized switch
+            {
+                <= 1 => 1,
+                <= 2 => 2,
+                <= 2.5 => 2.5,
+                <= 5 => 5,
+                _ => 10
+            };
+
+            return niceNormalized * magnitude;
+        }
+
+        private static double NormalizeTickValue(double value, double step)
+        {
+            int decimals = Math.Max(0, (int)Math.Ceiling(-Math.Log10(step)) + 2);
+            return Math.Round(value, Math.Min(decimals, 14));
         }
 
         private static int AxisValueToPixel(

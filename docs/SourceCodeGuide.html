@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AutoPlot ソースコードガイド</title>
+  <style>
+    :root { --ink:#18212b; --muted:#5d6b79; --line:#d7e0e8; --panel:#f7fafc; --accent:#087f8c; --accent2:#5b3f8c; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); font-family:"Segoe UI","Yu Gothic UI",sans-serif; line-height:1.65; background:#fff; }
+    header { padding:38px max(24px,calc((100vw - 1180px)/2)); color:white; background:linear-gradient(120deg,#075f6a,#5b3f8c); }
+    header h1 { margin:0 0 8px; font-size:2rem; } header p { margin:0; opacity:.9; }
+    main { max-width:1180px; margin:auto; padding:28px 24px 64px; }
+    nav { padding:14px 18px; border:1px solid var(--line); border-radius:10px; background:var(--panel); }
+    nav a { display:inline-block; margin:3px 18px 3px 0; color:var(--accent); }
+    h2 { margin-top:42px; padding-bottom:7px; border-bottom:2px solid var(--accent); }
+    h3 { margin-top:28px; color:var(--accent2); }
+    code { padding:2px 5px; border-radius:4px; background:#edf2f6; font-family:Consolas,monospace; }
+    table { width:100%; border-collapse:collapse; margin:14px 0 26px; font-size:.94rem; }
+    th,td { padding:10px 12px; border:1px solid var(--line); text-align:left; vertical-align:top; }
+    th { background:#eaf4f5; } tr:nth-child(even) td { background:#fbfcfd; }
+    .file { white-space:nowrap; font-family:Consolas,monospace; color:#174c55; }
+    .note { padding:12px 16px; border-left:4px solid #d59600; background:#fff8e2; }
+    .flow { padding:18px; border-radius:10px; background:#102a36; color:#dff7f4; font-family:Consolas,monospace; white-space:pre-wrap; }
+    footer { margin-top:42px; color:var(--muted); font-size:.9rem; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>AutoPlot ソースコードガイド</h1>
+  <p>WPF / MVVM / OpenCvSharpで構成されたグラフ画像数値化アプリの現行ソース構成</p>
+</header>
+<main>
+  <nav>
+    <a href="#overview">全体構成</a><a href="#entry">起動・設定</a><a href="#views">Views</a>
+    <a href="#viewmodels">ViewModels</a><a href="#models">Models</a><a href="#processing">画像処理</a>
+    <a href="#services">Services</a><a href="#utils">Utils</a><a href="#legacy">旧・予約コード</a>
+  </nav>
+
+  <section id="overview">
+    <h2>1. 全体構成</h2>
+    <p><strong>MainViewModel</strong>が画面遷移と処理状態を統括し、<strong>ImageProcessingService</strong>を介して<strong>ImageProcessor</strong>へ基本抽出を依頼します。複数曲線の自動検出は<strong>AutoSeriesDetector</strong>、手動補助は<strong>SeriesTraceViewModel</strong>、確認・採否は<strong>AutoSeriesReviewViewModel</strong>が担当します。</p>
+    <div class="flow">画像入力 → ROI検出 → 軸設定 → 基本曲線抽出
+                         ├─ Auto Detect → 候補レビュー → 選択系列を実座標化
+                         ├─ Manual Trace → ガイド近傍探索 → 実座標化
+                         └─ Noise Removal → 再抽出・選択系列維持
+                                      ↓
+                            オーバーレイ / グラフ描画 / TSVコピー</div>
+    <p class="note">このガイドは <code>bin</code>、<code>obj</code>、<code>.vs</code> の生成物を対象外とし、リポジトリ内の手書きソースを説明します。</p>
+  </section>
+
+  <section id="entry">
+    <h2>2. 起動・プロジェクト・共通リソース</h2>
+    <table><thead><tr><th>ファイル</th><th>役割</th><th>主要内容</th></tr></thead><tbody>
+      <tr><td class="file">AutoPlot.csproj</td><td>プロジェクト定義</td><td>.NET 8 Windows/WPF、OpenCvSharp、MathNet.Numerics、CommunityToolkit.Mvvm、MaterialDesignThemesを参照する。</td></tr>
+      <tr><td class="file">App.xaml</td><td>アプリ共通リソース</td><td>起動Window、Material Design辞書、テーマ差し替え対象Brush、共通Button/TextBox/ComboBoxスタイルを定義する。</td></tr>
+      <tr><td class="file">App.xaml.cs</td><td>Applicationコード</td><td>クリップボード画像を扱う起動時処理など、アプリケーションレベルのイベントを担当する。</td></tr>
+      <tr><td class="file">AssemblyInfo.cs</td><td>アセンブリ設定</td><td>WPFテーマ情報など、アセンブリ単位のメタデータを定義する。</td></tr>
+    </tbody></table>
+  </section>
+
+  <section id="views">
+    <h2>3. Views（XAMLとコードビハインド）</h2>
+    <table><thead><tr><th>ファイル群</th><th>画面</th><th>責務</th></tr></thead><tbody>
+      <tr><td class="file">Views/MainView.xaml<br>MainView.xaml.cs</td><td>メイン画面</td><td>左メニュー、原画像と抽出グラフの2ペインを構成する。ドラッグ&ドロップ、貼り付け、旧インライン描画イベントをViewModelへ中継する。</td></tr>
+      <tr><td class="file">Views/AxisCalibrationDialog.xaml<br>AxisCalibrationDialog.xaml.cs</td><td>軸設定</td><td>X/Yの最小・最大、線形/対数、テーマを入力して確定する。検証済み値をMainViewModelへ返す。</td></tr>
+      <tr><td class="file">Views/ExtractionSettingsDialog.xaml<br>ExtractionSettingsDialog.xaml.cs</td><td>抽出設定</td><td>二値化閾値、平滑化窓、探索幅、最小曲線長、外れ値閾値を編集・検証する。</td></tr>
+      <tr><td class="file">Views/NoiseRemovalWindow.xaml<br>NoiseRemovalWindow.xaml.cs</td><td>ノイズ除去</td><td>画像上のペン入力をマスク線へ変換する。マウスキャプチャ、ストローク開始/終了、OK/Cancelを扱う。</td></tr>
+      <tr><td class="file">Views/SeriesTraceWindow.xaml<br>SeriesTraceWindow.xaml.cs</td><td>手動系列トレース</td><td>ユーザーが曲線を大まかになぞるCanvas。座標変換、Polyline表示、完了系列の再描画を行う。</td></tr>
+      <tr><td class="file">Views/AutoSeriesReviewWindow.xaml<br>AutoSeriesReviewWindow.xaml.cs</td><td>自動検出レビュー</td><td>候補を色分け表示し、チェックボックスで採用/除外する。全選択/全解除、選択0件防止、Enter確定を提供する。</td></tr>
+      <tr><td class="file">Views/CurveDataCopyDialog.xaml<br>CurveDataCopyDialog.xaml.cs</td><td>データコピー</td><td>固定幅の表示用データと枠外ヘッダーを表示し、ヘッダーを除いたTSVをクリップボードへ送る。</td></tr>
+      <tr><td class="file">Views/ImagePathDialog.xaml<br>ImagePathDialog.xaml.cs</td><td>画像パス入力</td><td>ファイルパスを入力してMainViewへ返す小規模ダイアログ。</td></tr>
+      <tr><td class="file">Views/SeriesCountDialog.xaml<br>SeriesCountDialog.xaml.cs</td><td>系列数入力</td><td>旧/補助的な系列数指定画面。現行のSeriesTraceWindow内入力へ役割が移行しつつある。</td></tr>
+    </tbody></table>
+  </section>
+
+  <section id="viewmodels">
+    <h2>4. ViewModels</h2>
+    <table><thead><tr><th>ファイル</th><th>クラス</th><th>責務と重要な状態</th></tr></thead><tbody>
+      <tr><td class="file">ViewModels/MainViewModel.cs</td><td>MainViewModel</td><td>画像、ROI、軸、抽出設定、表示状態、選択系列を所有する中核。全コマンド、ダイアログ開閉、基本抽出、自動/手動系列抽出、実座標変換、再検出時の選択維持、グラフ描画、コピー文字列生成を統括する。</td></tr>
+      <tr><td class="file">ViewModels/AxisAxisCalibrationDialogViewModel.cs</td><td>AxisCalibrationDialogViewModel</td><td>軸範囲、対数フラグ、テーマ候補と選択テーマを保持する。ファイル名にAxisが重複しているがクラス名は正常。</td></tr>
+      <tr><td class="file">ViewModels/ExtractionSettingsDialogViewModel.cs</td><td>ExtractionSettingsDialogViewModel</td><td>ExtractionSettingsを編集用プロパティへ展開し、範囲検証後に新しい設定オブジェクトを生成する。</td></tr>
+      <tr><td class="file">ViewModels/NoiseRemovalViewModel.cs</td><td>NoiseRemovalViewModel</td><td>ノイズマスク、プレビュー、Undo/Redoスタックを管理する。WriteableBitmapを再利用してペン描画のちらつきを抑える。</td></tr>
+      <tr><td class="file">ViewModels/SeriesTraceViewModel.cs</td><td>SeriesTraceViewModel</td><td>手動ガイド系列、現在系列番号、トレース状態、Undo/Redo、確定結果を管理する。</td></tr>
+      <tr><td class="file">ViewModels/AutoSeriesReviewViewModel.cs</td><td>AutoSeriesReviewViewModel<br>AutoSeriesCandidate</td><td>自動候補ごとの採用状態とプレビューを管理する。選択候補のみをMainViewModelへ返し、MatをDisposeする。</td></tr>
+      <tr><td class="file">ViewModels/CurveDataCopyDialogViewModel.cs</td><td>CurveDataCopyDialogViewModel</td><td>ヘッダーとデータを分離し、表示用固定幅テキストとコピー用TSVを別々に保持する。</td></tr>
+      <tr><td class="file">ViewModels/SeriesCountDialogViewModel.cs</td><td>SeriesCountDialogViewModel</td><td>系列数1項目だけを保持する旧/補助ViewModel。</td></tr>
+    </tbody></table>
+  </section>
+
+  <section id="models">
+    <h2>5. Models</h2>
+    <table><thead><tr><th>ファイル</th><th>型</th><th>意味</th></tr></thead><tbody>
+      <tr><td class="file">Models/CurveData.cs</td><td>CurveData</td><td>単一基本抽出の実座標点、ROI、原画像サイズの透明オーバーレイMatをまとめる。</td></tr>
+      <tr><td class="file">Models/ImagePoint.cs</td><td>ImagePoint</td><td>X/Yを持つ値型。ピクセル座標と実座標の双方で文脈に応じて使用される。</td></tr>
+      <tr><td class="file">Models/AxisSettings.cs</td><td>AxisSettings</td><td>X/Y最小最大値と対数フラグを保持する。</td></tr>
+      <tr><td class="file">Models/ExtractionSettings.cs</td><td>ExtractionSettings</td><td>二値化、ノイズマスク、手動/自動探索幅、最小長、平滑化、外れ値除去の設定値。</td></tr>
+      <tr><td class="file">Models/DisplayState.cs</td><td>DisplayState</td><td>None、Original、AxisCalibrated、NoiseRemoval、GraphPlotの表示状態列挙。</td></tr>
+      <tr><td class="file">Models/AppSettings.cs</td><td>AppSettings</td><td>永続化対象のアプリ設定。現在はテーマを保持する。</td></tr>
+      <tr><td class="file">Models/AppTheme.cs</td><td>AppTheme</td><td>Light、Dark、ChocoMintのテーマ列挙。</td></tr>
+      <tr><td class="file">Models/AppThemeOption.cs</td><td>AppThemeOption</td><td>テーマ列挙値と画面表示名の組。</td></tr>
+    </tbody></table>
+  </section>
+
+  <section id="processing">
+    <h2>6. ImageProcessing</h2>
+    <table><thead><tr><th>ファイル</th><th>役割</th><th>アルゴリズム概要</th></tr></thead><tbody>
+      <tr><td class="file">ImageProcessing/ImageProcessor.cs</td><td>基本画像処理</td><td>長い縦横線からROIを決定する。ROI内を二値化し、グリッド除去、ノイズマスク、連結成分フィルタ、列ごとの中央値、外れ値除去、移動平均、実座標変換、オーバーレイ生成を行う。</td></tr>
+      <tr><td class="file">ImageProcessing/AutoSeriesDetector.cs</td><td>複数系列自動検出</td><td>暗色/有彩色インクマスク、長線除去、列候補中心、位置・傾き予測トラッキング、欠損許容、断片再結合、長さ/密度/重複フィルタ、平滑化を行う。詳細はAutoDetectAlgorithm.htmlを参照。</td></tr>
+      <tr><td class="file">ImageProcessing/Helpers/PixelConverter.cs</td><td>座標変換</td><td>ピクセル範囲を線形または対数の実値範囲へ写像する。Y軸反転にも対応する。</td></tr>
+    </tbody></table>
+  </section>
+
+  <section id="services">
+    <h2>7. Services</h2>
+    <table><thead><tr><th>ファイル</th><th>役割</th><th>説明</th></tr></thead><tbody>
+      <tr><td class="file">Services/ImageProcessingService.cs</td><td>画像処理Facade</td><td>MainViewModelとImageProcessorを分離する。ROI検出、プロット処理、ROI強調表示、ノイズマスク適用を公開する。</td></tr>
+      <tr><td class="file">Services/AppSettingsService.cs</td><td>設定永続化</td><td>JSON設定をユーザー領域から読み書きし、失敗時は既定設定へフォールバックする。</td></tr>
+      <tr><td class="file">Services/AppThemeManager.cs</td><td>テーマ適用</td><td>テーマ別PaletteからDynamicResource Brushを差し替え、PlotColorsにもテーマを伝える。</td></tr>
+    </tbody></table>
+  </section>
+
+  <section id="utils">
+    <h2>8. Utils</h2>
+    <table><thead><tr><th>ファイル</th><th>役割</th><th>説明</th></tr></thead><tbody>
+      <tr><td class="file">Utils/OpenCvUtils.cs</td><td>画像変換・グラフ描画</td><td>画像ロード、BitmapSource/Mat変換、単一/複数系列グラフ描画を提供する。線形目盛りは1/2/2.5/5×10ⁿから見やすい刻みを選び、対数目盛りは10の累乗を使う。</td></tr>
+      <tr><td class="file">Utils/PlotColors.cs</td><td>描画色</td><td>最大16系列の重複しない色、テーマ別の背景・グリッド・軸・文字・ROI・ノイズマスク色をWPF Brush/OpenCV Scalarへ変換する。</td></tr>
+    </tbody></table>
+  </section>
+
+  <section id="legacy">
+    <h2>9. 旧コード・予約ファイル</h2>
+    <table><thead><tr><th>ファイル</th><th>状態</th><th>扱い</th></tr></thead><tbody>
+      <tr><td class="file">old/MainWindow.xaml<br>old/MainWindow.xaml.cs</td><td>旧UI</td><td>StartupUriでは参照されない旧メイン画面。現行機能の理解・変更対象はViews/MainView。</td></tr>
+      <tr><td class="file">Models/NoiseRemovalService.cs</td><td>空ファイル</td><td>将来のノイズ除去サービス分離用と見られる予約ファイル。現行処理では未使用。</td></tr>
+      <tr><td class="file">Models/NoiseRemovalParameters.cs</td><td>空ファイル</td><td>将来のパラメータモデル用予約。現行設定はExtractionSettingsにある。</td></tr>
+      <tr><td class="file">Models/MaskHistoryService.cs</td><td>空ファイル</td><td>将来の履歴サービス用予約。現行Undo/RedoはNoiseRemovalViewModel内で実装。</td></tr>
+    </tbody></table>
+  </section>
+
+  <section>
+    <h2>10. 変更時の依存関係ガイド</h2>
+    <ul>
+      <li>抽出ロジック変更：<code>ImageProcessor</code>または<code>AutoSeriesDetector</code>を変更し、設定追加時はModel → DialogViewModel → XAML → MainViewModelの順に接続する。</li>
+      <li>色変更：UI色は<code>AppThemeManager</code>、グラフ/系列色は<code>PlotColors</code>を変更する。</li>
+      <li>出力形式変更：<code>MainViewModel.BuildCurveDataText</code>と<code>CurveDataCopyDialogViewModel</code>を確認する。</li>
+      <li>Matはネイティブメモリを持つため、所有者を明確にし<code>using</code>/<code>Dispose</code>を維持する。</li>
+    </ul>
+  </section>
+  <footer>AutoPlot source documentation — current implementation snapshot.</footer>
+</main>
+</body>
+</html>

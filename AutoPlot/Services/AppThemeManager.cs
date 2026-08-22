@@ -42,16 +42,19 @@ namespace AutoPlot.Services
                     Color.FromRgb(0x0F, 0x14, 0x1A),
                     Color.FromRgb(0x10, 0x14, 0x1C)),
                 AppTheme.ChocoMint => new ThemePalette(
-                    Color.FromRgb(0xF7, 0xFB, 0xF8),
-                    Color.FromRgb(0xFF, 0xFF, 0xFC),
-                    Color.FromRgb(0xE9, 0xF7, 0xF0),
-                    Color.FromRgb(0xB9, 0xD8, 0xCA),
-                    Color.FromRgb(0x32, 0x25, 0x22),
-                    Color.FromRgb(0x68, 0x5B, 0x55),
-                    Color.FromRgb(0x55, 0xC7, 0xA7),
-                    Color.FromRgb(0x7A, 0x55, 0x45),
-                    Color.FromRgb(0x21, 0x1A, 0x17),
-                    Color.FromRgb(0xFF, 0xFF, 0xFC)),
+                    // Mint base with dark chocolate controls, inspired by the
+                    // reference image. Slightly different mint values preserve
+                    // panel and input boundaries without introducing gray.
+                    Color.FromRgb(0x94, 0xE5, 0xD1),
+                    Color.FromRgb(0xB8, 0xF0, 0xE2),
+                    Color.FromRgb(0x82, 0xD8, 0xC3),
+                    Color.FromRgb(0x58, 0x25, 0x0B),
+                    Color.FromRgb(0x49, 0x1D, 0x08),
+                    Color.FromRgb(0x75, 0x42, 0x27),
+                    Color.FromRgb(0x58, 0x25, 0x0B),
+                    Color.FromRgb(0x2D, 0x91, 0x7C),
+                    Color.FromRgb(0xD9, 0xFA, 0xF1),
+                    Color.FromRgb(0xD8, 0xF8, 0xEF)),
                 _ => new ThemePalette(
                     Color.FromRgb(0xFA, 0xFA, 0xFA),
                     Colors.White,
