@@ -12,6 +12,7 @@ namespace AutoPlot.Views
         public NoiseRemovalWindow()
         {
             InitializeComponent();
+            Deactivated += (_, _) => EndStroke();
         }
 
         private void PreviewImageControl_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -45,8 +46,14 @@ namespace AutoPlot.Views
 
         private void PreviewImageControl_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
+            EndStroke();
+        }
+
+        private void EndStroke()
+        {
             _isDrawing = false;
-            PreviewImageControl.ReleaseMouseCapture();
+            if (PreviewImageControl.IsMouseCaptured)
+                PreviewImageControl.ReleaseMouseCapture();
         }
 
         private void OnOkClicked(object sender, RoutedEventArgs e)
