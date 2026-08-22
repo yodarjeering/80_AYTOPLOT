@@ -2,7 +2,8 @@ using AutoPlot.Utils;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using OpenCvSharp;
-using OpenCvSharp.WpfExtensions;
+using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace AutoPlot.ViewModels
@@ -18,6 +19,7 @@ namespace AutoPlot.ViewModels
         private Mat _plotArea;
         private Mat _noiseMask;
         private readonly int _penSize = 10;
+        private WriteableBitmap? _previewBuffer;
 
         [ObservableProperty]
         private BitmapSource? _previewImage;
@@ -48,7 +50,32 @@ namespace AutoPlot.ViewModels
         {
             using var display = _plotArea.Clone();
             display.SetTo(PlotColors.GetNoiseMaskScalar(display), _noiseMask);
-            PreviewImage = BitmapSourceConverter.ToBitmapSource(display);
+
+            PixelFormat pixelFormat = display.Channels() == 4
+                ? PixelFormats.Bgra32
+                : PixelFormats.Bgr24;
+
+            if (_previewBuffer == null ||
+                _previewBuffer.PixelWidth != display.Width ||
+                _previewBuffer.PixelHeight != display.Height ||
+                _previewBuffer.Format != pixelFormat)
+            {
+                _previewBuffer = new WriteableBitmap(
+                    display.Width,
+                    display.Height,
+                    96,
+                    96,
+                    pixelFormat,
+                    null);
+                PreviewImage = _previewBuffer;
+            }
+
+            int stride = checked((int)display.Step());
+            _previewBuffer.WritePixels(
+                new Int32Rect(0, 0, display.Width, display.Height),
+                display.Data,
+                checked(stride * display.Height),
+                stride);
         }
 
         private void SaveStateForUndo()
@@ -85,10 +112,15 @@ namespace AutoPlot.ViewModels
             var m1 = CanvasPointToMatPoint(p1, canvasW, canvasH);
             var m2 = CanvasPointToMatPoint(p2, canvasW, canvasH);
 
-            if (!IsInside(m1) || !IsInside(m2))
+            bool m1Inside = IsInside(m1);
+            bool m2Inside = IsInside(m2);
+            if (!m1Inside && !m2Inside)
                 return;
 
-            Cv2.Line(_noiseMask, m1, m2, Scalar.White, _penSize);
+            m1 = ClampToImage(m1);
+            m2 = ClampToImage(m2);
+
+            Cv2.Line(_noiseMask, m1, m2, Scalar.White, _penSize, LineTypes.AntiAlias);
             UpdatePreview();
         }
 
@@ -124,6 +156,13 @@ namespace AutoPlot.ViewModels
         {
             return p.X >= 0 && p.Y >= 0 &&
                    p.X < _plotArea.Width && p.Y < _plotArea.Height;
+        }
+
+        private OpenCvSharp.Point ClampToImage(OpenCvSharp.Point p)
+        {
+            return new OpenCvSharp.Point(
+                Math.Clamp(p.X, 0, _plotArea.Width - 1),
+                Math.Clamp(p.Y, 0, _plotArea.Height - 1));
         }
 
         private void OnUndo()
