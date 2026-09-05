@@ -23,6 +23,12 @@ namespace AutoPlot.ViewModels
         [ObservableProperty]
         private int outlierRemovalThreshold = 0;
 
+        [ObservableProperty]
+        private bool useHighResolutionOutput;
+
+        [ObservableProperty]
+        private int targetOutputPointCount = 20;
+
         public ExtractionSettingsDialogViewModel()
         {
         }
@@ -35,6 +41,8 @@ namespace AutoPlot.ViewModels
             TraceSearchBandWidth = settings.TraceSearchBandWidth;
             MinCurveLength = settings.MinCurveLength;
             OutlierRemovalThreshold = settings.OutlierRemovalThreshold;
+            UseHighResolutionOutput = settings.UseHighResolutionOutput;
+            TargetOutputPointCount = settings.TargetOutputPointCount;
         }
 
         public ExtractionSettings ToSettings()
@@ -46,7 +54,9 @@ namespace AutoPlot.ViewModels
                 NoiseMaskThreshold = NoiseMaskThreshold,
                 TraceSearchBandWidth = TraceSearchBandWidth,
                 MinCurveLength = MinCurveLength,
-                OutlierRemovalThreshold = OutlierRemovalThreshold
+                OutlierRemovalThreshold = OutlierRemovalThreshold,
+                UseHighResolutionOutput = UseHighResolutionOutput,
+                TargetOutputPointCount = TargetOutputPointCount
             };
         }
 
@@ -85,6 +95,12 @@ namespace AutoPlot.ViewModels
             if (OutlierRemovalThreshold < 0)
             {
                 errorMessage = "OutlierRemovalThreshold must be 0 or greater.";
+                return false;
+            }
+
+            if (TargetOutputPointCount < 5 || TargetOutputPointCount > 100)
+            {
+                errorMessage = "TargetOutputPointCount must be between 5 and 100.";
                 return false;
             }
 

@@ -645,13 +645,13 @@ namespace AutoPlot.ViewModels
             detectedPixels = reviewVm.ConfirmSelection();
             _rawTraceSeries.Clear();
             _detectedPixelSeries = detectedPixels;
-            _detectedSeries = detectedPixels
+            _detectedSeries = ApplyOutputResolution(detectedPixels
                 .Select(series => ConvertPixelSeriesToRealPoints(
                     series,
                     plotSnapshot.Width,
                     plotSnapshot.Height))
                 .Where(series => series.Count > 0)
-                .ToList();
+                .ToList());
             _hasAutoDetectedSeries = _detectedSeries.Count > 0;
 
             ResultText = $"自動検出: {_detectedSeries.Count} 系列を採用";
@@ -808,7 +808,14 @@ namespace AutoPlot.ViewModels
 
             var sb = new StringBuilder();
 
-            foreach (var p in data.Points)
+            List<ImagePoint> outputPoints = ExtractionSettings.UseHighResolutionOutput
+                ? data.Points
+                : ResampleSeriesAtNiceXValues(
+                    data.Points,
+                    ExtractionSettings.TargetOutputPointCount,
+                    _axisSettings.IsXLog);
+
+            foreach (var p in outputPoints)
             {
                 sb.AppendLine($"{p.X,14:F6}\t{p.Y,14:F6}");
             }
@@ -847,7 +854,7 @@ namespace AutoPlot.ViewModels
                 detectedSeries.Add(ConvertPixelSeriesToRealPoints(detectedPixels, plotBgr.Width, plotBgr.Height));
             }
 
-            return detectedSeries;
+            return ApplyOutputResolution(detectedSeries);
         }
 
         private void RedetectAutomaticSeries()
@@ -867,13 +874,13 @@ namespace AutoPlot.ViewModels
                     .Where(candidate => previouslySelected.Any(selected =>
                         IsSameDetectedSeries(selected, candidate, ExtractionSettings.TraceSearchBandWidth)))
                     .ToList();
-            _detectedSeries = _detectedPixelSeries
+            _detectedSeries = ApplyOutputResolution(_detectedPixelSeries
                 .Select(series => ConvertPixelSeriesToRealPoints(
                     series,
                     _plotArea.Width,
                     _plotArea.Height))
                 .Where(series => series.Count > 0)
-                .ToList();
+                .ToList());
             _hasAutoDetectedSeries = _detectedSeries.Count > 0;
         }
 
@@ -1190,11 +1197,16 @@ namespace AutoPlot.ViewModels
                 sb.Append($"\tY{i + 1}");
             sb.AppendLine();
 
-            var xValues = tracedSeries
-                .SelectMany(series => series.Select(point => point.X))
-                .Distinct()
-                .OrderBy(x => x)
-                .ToList();
+            var xValues = ExtractionSettings.UseHighResolutionOutput
+                ? tracedSeries
+                    .SelectMany(series => series.Select(point => point.X))
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList()
+                : CreateNiceXValues(
+                    tracedSeries.SelectMany(series => series),
+                    ExtractionSettings.TargetOutputPointCount,
+                    _axisSettings.IsXLog);
 
             foreach (double x in xValues)
             {
@@ -1219,7 +1231,17 @@ namespace AutoPlot.ViewModels
             if (series.Count == 0)
                 return null;
 
-            var ordered = series.OrderBy(point => point.X).ToList();
+            // A near-vertical raster path can contain several pixels at the same
+            // X coordinate. Collapse its line thickness before interpolation.
+            var ordered = series
+                .GroupBy(point => point.X)
+                .Select(group => new ImagePoint
+                {
+                    X = group.Key,
+                    Y = group.Average(point => point.Y)
+                })
+                .OrderBy(point => point.X)
+                .ToList();
 
             for (int i = 0; i < ordered.Count; i++)
             {
@@ -1240,6 +1262,145 @@ namespace AutoPlot.ViewModels
             }
 
             return null;
+        }
+
+        private static List<ImagePoint> ResampleSeriesAtNiceXValues(
+            List<ImagePoint> series,
+            int targetPointCount,
+            bool isLogScale)
+        {
+            return CreateNiceXValues(series, targetPointCount, isLogScale)
+                .Select(x => new { X = x, Y = InterpolateY(series, x) })
+                .Where(point => point.Y.HasValue)
+                .Select(point => new ImagePoint { X = point.X, Y = point.Y!.Value })
+                .ToList();
+        }
+
+        private List<List<ImagePoint>> ApplyOutputResolution(List<List<ImagePoint>> seriesCollection)
+        {
+            if (ExtractionSettings.UseHighResolutionOutput || seriesCollection.Count == 0)
+                return seriesCollection;
+
+            List<double> commonXValues = CreateNiceXValues(
+                seriesCollection.SelectMany(series => series),
+                ExtractionSettings.TargetOutputPointCount,
+                _axisSettings.IsXLog);
+
+            return seriesCollection
+                .Select(series => commonXValues
+                    .Select(x => new { X = x, Y = InterpolateY(series, x) })
+                    .Where(point => point.Y.HasValue)
+                    .Select(point => new ImagePoint { X = point.X, Y = point.Y!.Value })
+                    .ToList())
+                .Where(series => series.Count > 0)
+                .ToList();
+        }
+
+        private static List<double> CreateNiceXValues(
+            IEnumerable<ImagePoint> points,
+            int targetPointCount,
+            bool isLogScale)
+        {
+            List<double> xValues = points
+                .Select(point => point.X)
+                .Where(double.IsFinite)
+                .ToList();
+            if (xValues.Count == 0)
+                return new List<double>();
+
+            double minimum = xValues.Min();
+            double maximum = xValues.Max();
+            if (maximum - minimum < 1e-12)
+                return new List<double> { minimum };
+
+            targetPointCount = Math.Clamp(targetPointCount, 5, 100);
+            return isLogScale
+                ? CreateNiceLogValues(minimum, maximum, targetPointCount)
+                : CreateNiceLinearValues(minimum, maximum, targetPointCount);
+        }
+
+        private static List<double> CreateNiceLinearValues(
+            double minimum,
+            double maximum,
+            int targetPointCount)
+        {
+            double rawStep = (maximum - minimum) / Math.Max(1, targetPointCount - 1);
+            double exponent = Math.Floor(Math.Log10(rawStep));
+            double[] fractions = [1.0, 2.0, 2.5, 5.0, 10.0];
+            double bestStep = rawStep;
+            double bestDifference = double.MaxValue;
+
+            for (int exponentOffset = -1; exponentOffset <= 1; exponentOffset++)
+            {
+                double magnitude = Math.Pow(10, exponent + exponentOffset);
+                foreach (double fraction in fractions)
+                {
+                    double step = fraction * magnitude;
+                    int count = Math.Max(0,
+                        (int)Math.Floor(maximum / step + 1e-10) -
+                        (int)Math.Ceiling(minimum / step - 1e-10) + 1);
+                    double difference = Math.Abs(count - targetPointCount);
+                    if (difference < bestDifference)
+                    {
+                        bestDifference = difference;
+                        bestStep = step;
+                    }
+                }
+            }
+
+            double first = Math.Ceiling(minimum / bestStep - 1e-10) * bestStep;
+            var result = new List<double>();
+            for (double value = first; value <= maximum + bestStep * 1e-9; value += bestStep)
+                result.Add(NormalizeFloatingPoint(value, bestStep));
+            return result;
+        }
+
+        private static List<double> CreateNiceLogValues(
+            double minimum,
+            double maximum,
+            int targetPointCount)
+        {
+            if (minimum <= 0 || maximum <= 0)
+                return new List<double>();
+
+            double[][] mantissaSets =
+            [
+                [1.0],
+                [1.0, 2.0, 5.0],
+                [1.0, 1.5, 2.0, 3.0, 5.0, 7.0],
+                [1.0, 1.2, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
+            ];
+
+            List<double> best = new();
+            foreach (double[] mantissas in mantissaSets)
+            {
+                var candidate = new List<double>();
+                int firstExponent = (int)Math.Floor(Math.Log10(minimum));
+                int lastExponent = (int)Math.Ceiling(Math.Log10(maximum));
+                for (int exponent = firstExponent; exponent <= lastExponent; exponent++)
+                {
+                    double magnitude = Math.Pow(10, exponent);
+                    foreach (double mantissa in mantissas)
+                    {
+                        double value = mantissa * magnitude;
+                        if (value >= minimum * (1 - 1e-10) && value <= maximum * (1 + 1e-10))
+                            candidate.Add(value);
+                    }
+                }
+
+                candidate = candidate.Distinct().OrderBy(value => value).ToList();
+                if (best.Count == 0 ||
+                    Math.Abs(candidate.Count - targetPointCount) < Math.Abs(best.Count - targetPointCount))
+                    best = candidate;
+            }
+
+            return best;
+        }
+
+        private static double NormalizeFloatingPoint(double value, double step)
+        {
+            int decimals = Math.Clamp(-(int)Math.Floor(Math.Log10(step)) + 2, 0, 12);
+            return Math.Round(value, decimals, MidpointRounding.AwayFromZero);
         }
 
         private void OnCopyCurveData()

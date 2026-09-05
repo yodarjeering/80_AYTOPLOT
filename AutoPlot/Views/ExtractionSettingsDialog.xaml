@@ -27,6 +27,8 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="移動平均" VerticalAlignment="Center" Margin="0,0,8,8"/>
@@ -58,6 +60,16 @@
                 <Slider Grid.Row="5" Grid.Column="1" Minimum="0" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True"
                         Value="{Binding OutlierRemovalThreshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,0"/>
                 <TextBox Grid.Row="5" Grid.Column="2" Width="60" Text="{Binding OutlierRemovalThreshold, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}"/>
+
+                <CheckBox Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="3"
+                          Content="高分解能で出力（現在の全検出点を保持）"
+                          IsChecked="{Binding UseHighResolutionOutput}"
+                          Margin="0,10,0,8"/>
+
+                <TextBlock Grid.Row="7" Grid.Column="0" Text="標準出力の目標点数" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <Slider Grid.Row="7" Grid.Column="1" Minimum="5" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True"
+                        Value="{Binding TargetOutputPointCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,8,0"/>
+                <TextBox Grid.Row="7" Grid.Column="2" Width="60" Text="{Binding TargetOutputPointCount, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True, NotifyOnValidationError=True}"/>
             </Grid>
         </GroupBox>
 

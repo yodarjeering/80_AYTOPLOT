@@ -8,6 +8,8 @@ namespace AutoPlot.Models
         public int TraceSearchBandWidth { get; set; } = 15;
         public int MinCurveLength { get; set; } = 20;
         public int OutlierRemovalThreshold { get; set; } = 0;
+        public bool UseHighResolutionOutput { get; set; } = false;
+        public int TargetOutputPointCount { get; set; } = 50;
 
         public ExtractionSettings()
         {
@@ -21,6 +23,8 @@ namespace AutoPlot.Models
             TraceSearchBandWidth = source.TraceSearchBandWidth;
             MinCurveLength = source.MinCurveLength;
             OutlierRemovalThreshold = source.OutlierRemovalThreshold;
+            UseHighResolutionOutput = source.UseHighResolutionOutput;
+            TargetOutputPointCount = source.TargetOutputPointCount;
         }
     }
 }
