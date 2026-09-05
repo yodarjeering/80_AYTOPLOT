@@ -4,6 +4,7 @@ namespace AutoPlot.Models
     {
         None,            // 初期状態（画像未ロードなど）
         Original,        // 原図表示
+        AxisRoiSelection, // 軸のプロット領域を手動選択中
         AxisCalibrated,   // 軸キャリブレーション表示
         NoiseRemoval,   // ノイズ除去モード
         GraphPlot // 抽出グラフ表示

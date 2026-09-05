@@ -36,6 +36,11 @@
                         IsEnabled="{Binding IsAxisDialogButtonEnabled}"
                         Command="{Binding AxisCalibrationCommand}" />
 
+                <Button Content="Manual calibration"
+                        ToolTip="原図上をドラッグして軸のプロット領域を指定します"
+                        Style="{StaticResource MainMenuButtonStyle}"
+                        Command="{Binding ManualAxisCalibrationCommand}" />
+
 
                 <Button
                     Content="Auto Detect"

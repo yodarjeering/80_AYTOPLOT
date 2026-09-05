@@ -38,9 +38,40 @@ namespace AutoPlot.ImageProcessing
             // for automatic tracking can pull a temporarily hidden series onto a
             // neighbouring curve. Automatic tracking uses a tighter local step.
             int maxJump = Math.Clamp(settings.TraceSearchBandWidth / 3, 3, 8);
+            List<List<WpfPoint>> horizontalCandidates = DetectInScanDirection(
+                ink, maxJump, settings.MinCurveLength, transposeResult: false);
+
+            // A column-wise tracker cannot represent a near-vertical curve well:
+            // one x coordinate contains many y values. Run exactly the same
+            // detector on the transposed mask, then map its points back.
+            using var transposedInk = new Mat();
+            Cv2.Transpose(ink, transposedInk);
+            List<List<WpfPoint>> verticalCandidates = DetectInScanDirection(
+                transposedInk, maxJump, settings.MinCurveLength, transposeResult: true);
+
+            return MergeDirectionalCandidates(
+                horizontalCandidates, verticalCandidates, ink, MaximumSeriesCount);
+        }
+
+        private static List<List<WpfPoint>> DetectInScanDirection(
+            Mat ink,
+            int maxJump,
+            int configuredMinimumLength,
+            bool transposeResult)
+        {
             var tracks = TrackCandidates(ink, maxJump);
             MergeCompatibleFragments(tracks, ink.Width, maxJump);
-            return SelectUsefulTracks(tracks, ink.Width, settings.MinCurveLength);
+            List<List<WpfPoint>> detected = SelectUsefulTracks(
+                tracks, ink.Width, configuredMinimumLength);
+
+            if (!transposeResult)
+                return detected;
+
+            return detected
+                .Select(series => series
+                    .Select(point => new WpfPoint(point.Y, point.X))
+                    .ToList())
+                .ToList();
         }
 
         private static Mat ToBgr(Mat source)
@@ -254,22 +285,99 @@ namespace AutoPlot.ImageProcessing
 
         private static bool IsDuplicate(List<WpfPoint> first, List<WpfPoint> second)
         {
-            var firstByX = first.ToDictionary(p => (int)p.X, p => p.Y);
-            int overlap = 0;
-            int close = 0;
+            if (first.Count == 0 || second.Count == 0)
+                return false;
 
-            foreach (WpfPoint point in second)
+            const double maximumDistance = 3.0;
+            double firstCoverage = CalculateNearPointCoverage(first, second, maximumDistance);
+            double secondCoverage = CalculateNearPointCoverage(second, first, maximumDistance);
+            return Math.Min(firstCoverage, secondCoverage) >= 0.55;
+        }
+
+        private static double CalculateNearPointCoverage(
+            List<WpfPoint> source,
+            List<WpfPoint> target,
+            double maximumDistance)
+        {
+            double maximumDistanceSquared = maximumDistance * maximumDistance;
+            int step = Math.Max(1, source.Count / 250);
+            int sampled = 0;
+            int near = 0;
+
+            for (int i = 0; i < source.Count; i += step)
             {
-                if (!firstByX.TryGetValue((int)point.X, out double otherY))
-                    continue;
-
-                overlap++;
-                if (Math.Abs(point.Y - otherY) <= 2.5)
-                    close++;
+                WpfPoint point = source[i];
+                sampled++;
+                if (target.Any(other =>
+                    (other.X - point.X) * (other.X - point.X) +
+                    (other.Y - point.Y) * (other.Y - point.Y) <= maximumDistanceSquared))
+                {
+                    near++;
+                }
             }
 
-            int requiredOverlap = (int)(Math.Min(first.Count, second.Count) * 0.6);
-            return overlap >= requiredOverlap && close >= overlap * 0.8;
+            return sampled == 0 ? 0 : (double)near / sampled;
+        }
+
+        private static List<List<WpfPoint>> MergeDirectionalCandidates(
+            List<List<WpfPoint>> horizontalCandidates,
+            List<List<WpfPoint>> verticalCandidates,
+            Mat ink,
+            int maximumCount)
+        {
+            var ranked = horizontalCandidates
+                .Concat(verticalCandidates)
+                .Select(points => new
+                {
+                    Points = points,
+                    Score = ScoreCandidate(points, ink)
+                })
+                .OrderByDescending(candidate => candidate.Score)
+                .ToList();
+
+            var accepted = new List<List<WpfPoint>>();
+            foreach (var candidate in ranked)
+            {
+                if (accepted.Any(existing => IsDuplicate(existing, candidate.Points)))
+                    continue;
+
+                accepted.Add(candidate.Points);
+                if (accepted.Count >= maximumCount)
+                    break;
+            }
+
+            // Keep the established top-to-bottom presentation order. Points in a
+            // vertical candidate intentionally remain ordered along Y; sorting
+            // them by X here would destroy its path through near-vertical parts.
+            return accepted.OrderBy(series => series.Average(point => point.Y)).ToList();
+        }
+
+        private static double ScoreCandidate(List<WpfPoint> points, Mat ink)
+        {
+            if (points.Count == 0)
+                return 0;
+
+            double arcLength = 0;
+            int supported = 0;
+            for (int i = 0; i < points.Count; i++)
+            {
+                WpfPoint point = points[i];
+                if (i > 0)
+                {
+                    WpfPoint previous = points[i - 1];
+                    arcLength += Math.Sqrt(
+                        (point.X - previous.X) * (point.X - previous.X) +
+                        (point.Y - previous.Y) * (point.Y - previous.Y));
+                }
+
+                int x = Math.Clamp((int)Math.Round(point.X), 0, ink.Width - 1);
+                int y = Math.Clamp((int)Math.Round(point.Y), 0, ink.Height - 1);
+                if (ink.At<byte>(y, x) != 0)
+                    supported++;
+            }
+
+            double supportRatio = (double)supported / points.Count;
+            return arcLength * (0.5 + supportRatio) + points.Count * 0.25;
         }
 
         private sealed class Track

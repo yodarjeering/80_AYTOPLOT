@@ -3,6 +3,7 @@ using AutoPlot.ViewModels;
 using AutoPlot.Models;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Controls;
 using System.Windows.Shapes;
 using AutoPlot.Utils;
 
@@ -13,6 +14,8 @@ namespace AutoPlot.Views
         private bool isDrawing = false;
         private Polyline currentLine;
         private Point _prevPoint;
+        private Point _roiSelectionStart;
+        private Rectangle? _roiSelectionRectangle;
 
         
 
@@ -61,7 +64,25 @@ namespace AutoPlot.Views
             var vm = DataContext as MainViewModel;
             if (vm == null)
                 return;
-            
+
+            if (vm.DisplayState == DisplayState.AxisRoiSelection)
+            {
+                isDrawing = true;
+                _roiSelectionStart = e.GetPosition(DrawCanvas);
+                _roiSelectionRectangle = new Rectangle
+                {
+                    Stroke = new SolidColorBrush(PlotColors.RoiHighlight),
+                    StrokeThickness = 2,
+                    Fill = Brushes.Transparent
+                };
+                Canvas.SetLeft(_roiSelectionRectangle, _roiSelectionStart.X);
+                Canvas.SetTop(_roiSelectionRectangle, _roiSelectionStart.Y);
+                DrawCanvas.Children.Clear();
+                DrawCanvas.Children.Add(_roiSelectionRectangle);
+                DrawCanvas.CaptureMouse();
+                return;
+            }
+
             if (vm.DisplayState != DisplayState.NoiseRemoval) return;
 
             vm.CanvasWidth  = DrawCanvas.ActualWidth;
@@ -92,6 +113,18 @@ namespace AutoPlot.Views
             if (vm == null)
                 return;
 
+            if (vm.DisplayState == DisplayState.AxisRoiSelection && _roiSelectionRectangle != null)
+            {
+                Point current = e.GetPosition(DrawCanvas);
+                double left = Math.Min(_roiSelectionStart.X, current.X);
+                double top = Math.Min(_roiSelectionStart.Y, current.Y);
+                Canvas.SetLeft(_roiSelectionRectangle, left);
+                Canvas.SetTop(_roiSelectionRectangle, top);
+                _roiSelectionRectangle.Width = Math.Abs(current.X - _roiSelectionStart.X);
+                _roiSelectionRectangle.Height = Math.Abs(current.Y - _roiSelectionStart.Y);
+                return;
+            }
+
             if (vm.DisplayState != DisplayState.NoiseRemoval) return;
 
             Point curr = e.GetPosition(DrawCanvas);
@@ -106,6 +139,23 @@ namespace AutoPlot.Views
 
         private void DrawCanvas_MouseUp(object sender, MouseButtonEventArgs e)
         {
+            if (DataContext is MainViewModel vm &&
+                vm.DisplayState == DisplayState.AxisRoiSelection &&
+                _roiSelectionRectangle != null)
+            {
+                Point end = e.GetPosition(DrawCanvas);
+                bool completed = vm.CompleteManualAxisRoiSelection(
+                    _roiSelectionStart, end, DrawCanvas.ActualWidth, DrawCanvas.ActualHeight);
+                DrawCanvas.ReleaseMouseCapture();
+                if (completed)
+                {
+                    DrawCanvas.Children.Remove(_roiSelectionRectangle);
+                    _roiSelectionRectangle = null;
+                }
+                isDrawing = false;
+                return;
+            }
+
             isDrawing = false;
             currentLine = null;
         }

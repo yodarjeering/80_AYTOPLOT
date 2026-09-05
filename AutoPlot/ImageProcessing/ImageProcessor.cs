@@ -44,7 +44,7 @@ namespace AutoPlot.ImageProcessing
 
             // ★ ROI はここで一度だけ決める
             OpenCvSharp.Rect roi =
-                CalculatePlotRoi(verticalSegments, horizontalSegments);
+                CalculatePlotRoi(verticalSegments, horizontalSegments, workingImage.Size());
 
             return roi;
         }
@@ -329,10 +329,11 @@ namespace AutoPlot.ImageProcessing
 
         OpenCvSharp.Rect CalculatePlotRoi(
             List<LineSegmentPoint> verticalLines,
-            List<LineSegmentPoint> horizontalLines)
+            List<LineSegmentPoint> horizontalLines,
+            OpenCvSharp.Size imageSize)
         {
             if (verticalLines.Count < 2 || horizontalLines.Count < 2)
-                throw new InvalidOperationException("ROI算出に十分な線が検出されていない");
+                return new OpenCvSharp.Rect(0, 0, imageSize.Width, imageSize.Height);
 
             int xMin = verticalLines.Min(l => Math.Min(l.P1.X, l.P2.X));
             int xMax = verticalLines.Max(l => Math.Max(l.P1.X, l.P2.X));
@@ -342,12 +343,19 @@ namespace AutoPlot.ImageProcessing
             int yMax = horizontalLines.Max(l => Math.Max(l.P1.Y, l.P2.Y));
 
 
-            return new OpenCvSharp.Rect(
+            var roi = new OpenCvSharp.Rect(
                 xMin,
                 yMin,
                 xMax - xMin,
                 yMax - yMin
             );
+
+            // OpenCV は空または極端に小さい ROI を扱えない処理があるため、
+            // 自動検出結果が不十分な場合は画像全体を安全な既定値にする。
+            if (roi.Width < 4 || roi.Height < 4)
+                return new OpenCvSharp.Rect(0, 0, imageSize.Width, imageSize.Height);
+
+            return roi;
         }
 
         List<LineSegmentPoint> ExtractLineSegments(

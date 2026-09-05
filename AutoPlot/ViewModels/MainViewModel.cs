@@ -93,6 +93,7 @@ namespace AutoPlot.ViewModels
         // ===== Commands =====
         public IRelayCommand LoadImageCommand { get; }
         public IRelayCommand AxisCalibrationCommand { get; }
+        public IRelayCommand ManualAxisCalibrationCommand { get; }
         public IRelayCommand ShowOriginalImageCommand { get; }
         public IRelayCommand NoiseRemovalCommand { get; }
         public IRelayCommand NoiseRemovalCompleteCommand { get; }
@@ -111,6 +112,7 @@ namespace AutoPlot.ViewModels
 
             LoadImageCommand = new RelayCommand(OnLoadImage);
             AxisCalibrationCommand = new RelayCommand(OnAxisCalibration);
+            ManualAxisCalibrationCommand = new RelayCommand(OnManualAxisCalibration);
             ShowOriginalImageCommand = new RelayCommand(OnShowOriginalImage);
             NoiseRemovalCommand = new RelayCommand(OnNoiseRemoval);
             ShowNoiseRemovalWindowCommand = new RelayCommand(OnShowNoiseRemovalWindow); // <- 14追加
@@ -147,11 +149,74 @@ namespace AutoPlot.ViewModels
 
             _workingImage?.Dispose();
             _workingImage = inputImage.Clone();
+
+            if (IsFullImageRoi(_roi, inputImage.Size()))
+                ResultText = "軸を自動検出できなかったため、画像全体を選択しました。必要に応じて手動キャリブレーションしてください。";
+            else
+                ResultText = "軸を自動検出しました";
         }
 
         // =========================================================
         // Axis Calibration
         // =========================================================
+        private void OnManualAxisCalibration()
+        {
+            if (_originalBitmap == null || _workingImage == null)
+            {
+                ResultText = "先に画像を読み込んでください。";
+                return;
+            }
+
+            InputBitmap = _originalBitmap;
+            _displayState = DisplayState.AxisRoiSelection;
+            ResultText = "原図上でプロット領域の左上から右下までドラッグしてください。";
+        }
+
+        public bool CompleteManualAxisRoiSelection(
+            System.Windows.Point startCanvasPoint,
+            System.Windows.Point endCanvasPoint,
+            double canvasWidth,
+            double canvasHeight)
+        {
+            if (_displayState != DisplayState.AxisRoiSelection ||
+                _originalBitmap == null || _workingImage == null)
+                return false;
+
+            double imageWidth = _originalBitmap.PixelWidth;
+            double imageHeight = _originalBitmap.PixelHeight;
+            if (canvasWidth <= 0 || canvasHeight <= 0 || imageWidth <= 0 || imageHeight <= 0)
+                return false;
+
+            double scale = Math.Min(canvasWidth / imageWidth, canvasHeight / imageHeight);
+            double displayedWidth = imageWidth * scale;
+            double displayedHeight = imageHeight * scale;
+            double offsetX = (canvasWidth - displayedWidth) / 2.0;
+            double offsetY = (canvasHeight - displayedHeight) / 2.0;
+
+            double left = Math.Clamp(Math.Min(startCanvasPoint.X, endCanvasPoint.X), offsetX, offsetX + displayedWidth);
+            double right = Math.Clamp(Math.Max(startCanvasPoint.X, endCanvasPoint.X), offsetX, offsetX + displayedWidth);
+            double top = Math.Clamp(Math.Min(startCanvasPoint.Y, endCanvasPoint.Y), offsetY, offsetY + displayedHeight);
+            double bottom = Math.Clamp(Math.Max(startCanvasPoint.Y, endCanvasPoint.Y), offsetY, offsetY + displayedHeight);
+
+            int x = Math.Clamp((int)Math.Round((left - offsetX) / scale), 0, _workingImage.Width - 1);
+            int y = Math.Clamp((int)Math.Round((top - offsetY) / scale), 0, _workingImage.Height - 1);
+            int rightPx = Math.Clamp((int)Math.Round((right - offsetX) / scale), x + 1, _workingImage.Width);
+            int bottomPx = Math.Clamp((int)Math.Round((bottom - offsetY) / scale), y + 1, _workingImage.Height);
+
+            if (rightPx - x < 4 || bottomPx - y < 4)
+            {
+                ResultText = "選択範囲が小さすぎます。もう少し大きな範囲をドラッグしてください。";
+                return false;
+            }
+
+            _roi = new OpenCvSharp.Rect(x, y, rightPx - x, bottomPx - y);
+            OnAxisCalibration();
+            return true;
+        }
+
+        private static bool IsFullImageRoi(OpenCvSharp.Rect roi, OpenCvSharp.Size imageSize) =>
+            roi.X == 0 && roi.Y == 0 && roi.Width == imageSize.Width && roi.Height == imageSize.Height;
+
         private void OnAxisCalibration()
         {
             bool canCalibrateAxis = _originalBitmap != null && _roi.Width > 0 && _roi.Height > 0;
@@ -820,27 +885,35 @@ namespace AutoPlot.ViewModels
             if (selected.Count == 0 || candidate.Count == 0)
                 return false;
 
-            var selectedByX = selected.ToDictionary(
-                point => (int)Math.Round(point.X),
-                point => point.Y);
-            int overlap = 0;
-            double totalDistance = 0;
+            double allowedDistance = Math.Clamp(searchBandWidth / 2.0, 3.0, 8.0);
+            double selectedCoverage = CalculateSeriesCoverage(selected, candidate, allowedDistance);
+            double candidateCoverage = CalculateSeriesCoverage(candidate, selected, allowedDistance);
+            return Math.Min(selectedCoverage, candidateCoverage) >= 0.35;
+        }
 
-            foreach (System.Windows.Point point in candidate)
+        private static double CalculateSeriesCoverage(
+            List<System.Windows.Point> source,
+            List<System.Windows.Point> target,
+            double maximumDistance)
+        {
+            double maximumDistanceSquared = maximumDistance * maximumDistance;
+            int sampleStep = Math.Max(1, source.Count / 250);
+            int sampled = 0;
+            int matched = 0;
+
+            for (int i = 0; i < source.Count; i += sampleStep)
             {
-                if (!selectedByX.TryGetValue((int)Math.Round(point.X), out double selectedY))
-                    continue;
-
-                overlap++;
-                totalDistance += Math.Abs(point.Y - selectedY);
+                System.Windows.Point point = source[i];
+                sampled++;
+                if (target.Any(other =>
+                    (other.X - point.X) * (other.X - point.X) +
+                    (other.Y - point.Y) * (other.Y - point.Y) <= maximumDistanceSquared))
+                {
+                    matched++;
+                }
             }
 
-            int requiredOverlap = Math.Max(10, (int)(Math.Min(selected.Count, candidate.Count) * 0.35));
-            if (overlap < requiredOverlap)
-                return false;
-
-            double allowedAverageDistance = Math.Clamp(searchBandWidth / 2.0, 3.0, 8.0);
-            return totalDistance / overlap <= allowedAverageDistance;
+            return sampled == 0 ? 0 : (double)matched / sampled;
         }
 
         private static List<System.Windows.Point> DetectPixelSeriesNearGuide(
@@ -1225,6 +1298,11 @@ namespace AutoPlot.ViewModels
 
             _workingImage?.Dispose();
             _workingImage = inputImage.Clone();
+
+            if (IsFullImageRoi(_roi, inputImage.Size()))
+                ResultText = "軸を自動検出できなかったため、画像全体を選択しました。必要に応じて手動キャリブレーションしてください。";
+            else
+                ResultText = "軸を自動検出しました";
         }
     }
 }
